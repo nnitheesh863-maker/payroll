@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply bg-canvas text-slate-900 font-sans min-h-screen antialiased selection:bg-primary-100 selection:text-primary-700;
+    @apply bg-[#FAF7F2] text-slate-800 font-sans min-h-screen antialiased selection:bg-[#EADCC9] selection:text-[#78350F];
   }
 }
 
@@ -14,23 +14,101 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #f7f3eb;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #d8c7b5;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #bfa892;
 }
 
+/* Glassmorphism Styles for Tea & Sandalwood Theme */
 .glass-card {
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(8px);
-  border: 1px solid #E2E8F0;
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(234, 219, 206, 0.85);
+  box-shadow: 0 20px 40px -15px rgba(120, 53, 15, 0.06);
 }
 
-/* Smooth Page & Component Transition Animations */
+.glass-card-glow {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(234, 219, 206, 0.9);
+  box-shadow: 0 25px 50px -12px rgba(140, 83, 43, 0.09);
+}
+
+.glass-nav {
+  background: rgba(250, 247, 242, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(234, 219, 206, 0.8);
+}
+
+/* Glowing Icon Containers */
+.icon-glow-sandal {
+  box-shadow: 0 0 20px rgba(140, 83, 43, 0.35);
+}
+.icon-glow-tea {
+  box-shadow: 0 0 20px rgba(184, 123, 76, 0.35);
+}
+.icon-glow-amber {
+  box-shadow: 0 0 20px rgba(217, 119, 6, 0.35);
+}
+.icon-glow-emerald {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.35);
+}
+
+
+/* Animations */
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes pulseSubtle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes shimmerWave {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-float {
+  animation: floatSlow 4s ease-in-out infinite;
+}
+
+.animate-pulse-subtle {
+  animation: pulseSubtle 3s ease-in-out infinite;
+}
+
+.animate-fade-scale {
+  animation: fadeInScale 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-right {
+  animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 @keyframes fadeInScale {
   0% {
     opacity: 0;
@@ -53,19 +131,12 @@
   }
 }
 
-.animate-fade-scale {
-  animation: fadeInScale 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.animate-slide-right {
-  animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
 /* Interactive Card Elevate effect */
 .card-hover-effect {
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .card-hover-effect:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.25);
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px -10px rgba(37, 99, 235, 0.12);
 }
+
