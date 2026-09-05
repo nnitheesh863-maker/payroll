@@ -1,46 +1,74 @@
-from datetime import datetime, date
-from sqlalchemy import Column, Integer, String, Float, Date, DateTime, Boolean, Text
-from sqlalchemy.orm import relationship
-from app.core.database import Base
+"""
+Employee model — core HR profile.
 
-class Employee(Base):
+Phase 1 (Database & Core HR). Holds identity, contact, employment and
+bank/account details. Bank fields are informational only in this phase;
+later payroll phases use them for payout warnings. No authentication
+credentials are stored here (authentication belongs to Phase 8).
+"""
+
+import uuid
+
+from sqlalchemy import Uuid
+
+from app.database.session import Base
+from app.extensions import db
+from app.models.base import TimestampMixin
+
+
+class Employee(Base, TimestampMixin):
+    """An employee of the organisation."""
+
     __tablename__ = "employees"
 
-    id = Column(Integer, primary_key=True, index=True)
-    emp_code = Column(String, unique=True, index=True, nullable=False) # e.g. EMP001
-    first_name = Column(String, nullable=False)
-    last_name = Column(String, nullable=False)
-    email = Column(String, unique=True, index=True, nullable=False)
-    phone = Column(String, nullable=True)
-    department = Column(String, default="Engineering", nullable=False) # Engineering, HR, Finance, Operations, Sales
-    position = Column(String, default="Associate", nullable=False) # e.g. Software Engineer, HR Specialist
-    joining_date = Column(Date, default=date.today, nullable=False)
-    status = Column(String, default="ACTIVE", nullable=False) # ACTIVE, ON_LEAVE, TERMINATED
-    
-    # Financial & Legal Details
-    bank_account_number = Column(String, nullable=True)
-    bank_name = Column(String, nullable=True)
-    bank_ifsc = Column(String, nullable=True)
-    pan_number = Column(String, nullable=True)
-    pf_number = Column(String, nullable=True)
-    uan_number = Column(String, nullable=True)
-    
-    # Personal Info
-    address = Column(Text, nullable=True)
-    emergency_contact = Column(String, nullable=True)
-    profile_photo = Column(String, nullable=True)
+    id = db.Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # ── Identity ───────────────────────────────────────────────────
+    employee_code = db.Column(
+        db.String(50), nullable=False, unique=True, index=True
+    )
+    first_name = db.Column(db.String(100), nullable=False)
+    last_name = db.Column(db.String(100), nullable=False)
+    email = db.Column(
+        db.String(255), nullable=False, unique=True, index=True
+    )
+    phone = db.Column(db.String(30), nullable=True)
+    date_of_birth = db.Column(db.Date, nullable=True)
+    gender = db.Column(db.String(20), nullable=True)
 
-    # Relationships
-    user = relationship("User", back_populates="employee", uselist=False, foreign_keys="User.employee_id")
-    contracts = relationship("Contract", back_populates="employee", cascade="all, delete-orphan")
-    attendance_records = relationship("Attendance", back_populates="employee", cascade="all, delete-orphan")
-    timeoff_requests = relationship("TimeOffRequest", back_populates="employee", foreign_keys="TimeOffRequest.employee_id", cascade="all, delete-orphan")
-    timeoff_allocations = relationship("TimeOffAllocation", back_populates="employee", cascade="all, delete-orphan")
-    payslips = relationship("Payslip", back_populates="employee", cascade="all, delete-orphan")
+    # ── Address ────────────────────────────────────────────────────
+    address = db.Column(db.String(255), nullable=True)
+    city = db.Column(db.String(100), nullable=True)
+    state = db.Column(db.String(100), nullable=True)
+    country = db.Column(db.String(100), nullable=True)
+    postal_code = db.Column(db.String(20), nullable=True)
 
-    @property
-    def full_name(self) -> str:
-        return f"{self.first_name} {self.last_name}"
+    # ── Employment ─────────────────────────────────────────────────
+    joining_date = db.Column(db.Date, nullable=False)
+    # Typical values: "active", "on_leave", "terminated", "resigned".
+    employment_status = db.Column(
+        db.String(30), nullable=False, default="active"
+    )
+    department_id = db.Column(
+        db.ForeignKey("departments.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    job_title = db.Column(db.String(120), nullable=True)
+
+    # ── Bank / account info (informational in Phase 1) ─────────────
+    bank_name = db.Column(db.String(120), nullable=True)
+    bank_account_number = db.Column(db.String(60), nullable=True)
+    bank_ifsc_code = db.Column(db.String(30), nullable=True)
+
+    # ── Relationships ──────────────────────────────────────────────
+    department = db.relationship("Department", back_populates="employees")
+    employment_history = db.relationship(
+        "EmploymentHistory",
+        back_populates="employee",
+        cascade="all, delete-orphan",
+        order_by="EmploymentHistory.effective_from",
+    )
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"<Employee {self.employee_code} {self.email}>"

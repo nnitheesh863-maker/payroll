@@ -5,7 +5,9 @@ import { RoleRoute } from './RoleRoute';
 import { MainLayout } from '../components/layout/MainLayout';
 
 // Pages
+import { Landing } from '../pages/Landing';
 import { Login } from '../pages/auth/Login';
+import { Register } from '../pages/auth/Register';
 import { Dashboard } from '../pages/Dashboard';
 import { EmployeeList } from '../pages/employees/EmployeeList';
 import { EmployeeDetails } from '../pages/employees/EmployeeDetails';
@@ -24,13 +26,14 @@ import { ReportsPage } from '../pages/reports/ReportsPage';
 export const AppRoutes: React.FC = () => {
   return (
     <Routes>
-      {/* Public Route */}
+      {/* Public Landing & Auth Routes */}
+      <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
 
-      {/* Authenticated Root */}
+      {/* Authenticated Dashboard & ERP Routes */}
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
 
           {/* Employee Directory */}
@@ -83,7 +86,7 @@ export const AppRoutes: React.FC = () => {
       </Route>
 
       {/* Catch-all redirect */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };
