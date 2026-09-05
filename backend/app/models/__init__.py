@@ -17,3 +17,4 @@ from app.models.payrun import Payrun  # noqa: F401
 from app.models.payrun_employee import PayrunEmployee  # noqa: F401
 from app.models.payslip import Payslip  # noqa: F401
 from app.models.payslip_line import PayslipLine  # noqa: F401
+from app.models.user import User  # noqa: F401
