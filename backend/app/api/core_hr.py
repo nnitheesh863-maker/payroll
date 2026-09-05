@@ -139,6 +139,47 @@ STRUCTURES = [
     }
 ]
 
+@salary_bp.get("/salary/structures")
 @salary_bp.get("/salary-structures")
 def list_salary_structures():
     return jsonify(STRUCTURES), 200
+
+@salary_bp.get("/salary/structures/<int:sid>")
+@salary_bp.get("/salary-structures/<int:sid>")
+def get_salary_structure(sid):
+    for s in STRUCTURES:
+        if s["id"] == sid:
+            return jsonify(s), 200
+    return jsonify({"detail": "Salary structure not found"}), 404
+
+@salary_bp.post("/salary/structures")
+@salary_bp.post("/salary-structures")
+def create_salary_structure():
+    data = request.get_json() or {}
+    new_id = len(STRUCTURES) + 1
+    new_s = {
+        "id": new_id,
+        "code": data.get("code", f"STR_{new_id}"),
+        "name": data.get("name", "Custom Salary Structure"),
+        "description": data.get("description", ""),
+        "is_active": True,
+        "rules": data.get("rules", []),
+    }
+    STRUCTURES.append(new_s)
+    return jsonify(new_s), 201
+
+@salary_bp.post("/salary/rules")
+def create_salary_rule():
+    data = request.get_json() or {}
+    new_r = {
+        "id": 100,
+        "code": data.get("code", "CUSTOM"),
+        "name": data.get("name", "Custom Rule"),
+        "category": data.get("category", "ALLOWANCE"),
+        "rule_type": data.get("rule_type", "PERCENTAGE"),
+        "amount_or_percentage": data.get("amount_or_percentage", 10),
+        "sequence": data.get("sequence", 1),
+        "is_active": True,
+    }
+    return jsonify(new_r), 201
+

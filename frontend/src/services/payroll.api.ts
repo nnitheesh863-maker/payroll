@@ -15,6 +15,8 @@ export const payrollApi = {
     period_start: string;
     period_end: string;
     pay_date: string;
+    pay_structure?: string;
+    selected_employee_ids?: number[];
     notes?: string;
   }): Promise<Payrun> => {
     const res = await api.post('/payruns', data);

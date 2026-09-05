@@ -3,7 +3,7 @@ import React, { ReactNode } from 'react';
 export interface Column<T> {
   key: string;
   title: string;
-  render?: (item: T) => ReactNode;
+  render?: (item: T, index?: number) => ReactNode;
   align?: 'left' | 'center' | 'right';
   className?: string;
 }
@@ -42,13 +42,13 @@ export function DataTable<T extends { id?: string | number }>({
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-slate-200 text-sm">
-        <thead className="bg-slate-50/80">
+        <thead className="bg-[#FAF7F2] border-b border-[#EADBCE]">
           <tr>
             {columns.map((col) => (
               <th
                 key={col.key}
                 scope="col"
-                className={`px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider ${
+                className={`px-4 py-3 text-xs font-bold text-[#4A2810] uppercase tracking-wider ${
                   col.align === 'right'
                     ? 'text-right'
                     : col.align === 'center'
@@ -61,13 +61,13 @@ export function DataTable<T extends { id?: string | number }>({
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100 bg-white">
+        <tbody className="divide-y divide-[#EADBCE]/60 bg-white">
           {data.map((item, rowIdx) => (
             <tr
               key={item.id ?? rowIdx}
               onClick={() => onRowClick && onRowClick(item)}
               className={`transition-colors duration-150 ${
-                onRowClick ? 'cursor-pointer hover:bg-slate-50/80' : 'hover:bg-slate-50/40'
+                onRowClick ? 'cursor-pointer hover:bg-[#FAF7F2]' : 'hover:bg-[#FAF7F2]/50'
               }`}
             >
               {columns.map((col) => (
@@ -81,7 +81,7 @@ export function DataTable<T extends { id?: string | number }>({
                       : 'text-left'
                   } ${col.className || ''}`}
                 >
-                  {col.render ? col.render(item) : (item as any)[col.key]}
+                  {col.render ? col.render(item, rowIdx) : (item as any)[col.key]}
                 </td>
               ))}
             </tr>
