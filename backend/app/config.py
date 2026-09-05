@@ -3,16 +3,21 @@ Application configuration using pydantic-settings.
 All values are loaded from environment variables / .env file.
 """
 
+from pathlib import Path
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env", override=True)
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=BASE_DIR / ".env",
         env_file_encoding="utf-8",
-        case_sensitive=True,
+        extra="ignore",
     )
 
     # ── Application ──────────────────────────────────────────────
