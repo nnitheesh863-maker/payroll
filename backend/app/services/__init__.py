@@ -1,6 +1,6 @@
 """
 Services package — domain services for schedules, contracts, attendance,
-time off and salary configuration.
+time off, salary configuration, payroll calculation, and payruns.
 """
 
 from app.services.schedule_service import (
@@ -77,6 +77,36 @@ from app.services.salary_structure_service import (
     validate_structure,
     validate_structure_config,
 )
+from app.services.payroll_formula import (
+    PayrollDivisionByZeroError,
+    PayrollFormulaError,
+    UnknownFormulaVariableError,
+    UnsafeFormulaError,
+    evaluate_formula,
+)
+from app.services.payroll_calculation import (
+    MissingApplicableContractError,
+    MissingSalaryStructureError,
+    NoActiveRulesError,
+    PayrollCalculationError,
+    PayrollContext,
+    PayrollResult,
+    RuleEvaluationResult,
+    calculate_payroll,
+)
+from app.services.payrun_service import (
+    PayrunComputationError,
+    PayrunDomainError,
+    PayrunStateError,
+    PayrunValidationError,
+    add_employee_to_payrun,
+    compute_payrun,
+    create_payrun,
+    get_payrun_totals,
+    mark_payrun_paid,
+    remove_employee_from_payrun,
+    validate_payrun,
+)
 
 __all__ = [
     "calculate_day_working_hours",
@@ -141,4 +171,28 @@ __all__ = [
     "deactivate_structure",
     "add_rule_to_structure",
     "get_structure_rules",
+    "PayrollFormulaError",
+    "UnsafeFormulaError",
+    "UnknownFormulaVariableError",
+    "PayrollDivisionByZeroError",
+    "evaluate_formula",
+    "PayrollCalculationError",
+    "MissingApplicableContractError",
+    "MissingSalaryStructureError",
+    "NoActiveRulesError",
+    "PayrollContext",
+    "PayrollResult",
+    "RuleEvaluationResult",
+    "calculate_payroll",
+    "PayrunDomainError",
+    "PayrunValidationError",
+    "PayrunStateError",
+    "PayrunComputationError",
+    "create_payrun",
+    "add_employee_to_payrun",
+    "remove_employee_from_payrun",
+    "compute_payrun",
+    "validate_payrun",
+    "mark_payrun_paid",
+    "get_payrun_totals",
 ]

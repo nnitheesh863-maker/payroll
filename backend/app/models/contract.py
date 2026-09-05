@@ -50,11 +50,17 @@ class Contract(Base, TimestampMixin):
         nullable=True,
         index=True,
     )
+    salary_structure_id = db.Column(
+        db.ForeignKey("salary_structures.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     notes = db.Column(db.Text, nullable=True)
 
     # ── Relationships ──────────────────────────────────────────────
     employee = db.relationship("Employee", back_populates="contracts")
     working_schedule = db.relationship("WorkingSchedule", back_populates="contracts")
+    salary_structure = db.relationship("SalaryStructure")
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<Contract {self.contract_reference} employee={self.employee_id} status={self.status}>"
