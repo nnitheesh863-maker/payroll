@@ -38,7 +38,7 @@ export const Sidebar: React.FC = () => {
       label: 'Contracts',
       path: '/contracts',
       icon: FileText,
-      show: !isEmployee || hasRole(['HR_MANAGER', 'HR_PAYROLL_MANAGER', 'ADMIN']),
+      show: true,
     },
     {
       label: 'Attendance',
