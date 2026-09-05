@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Lock, Mail, ShieldAlert, ArrowRight, UserCheck, Sparkles } from 'lucide-react';
+import { Building2, Lock, Mail, ShieldAlert, ArrowRight, UserCheck, Sparkles, X, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
@@ -11,6 +11,7 @@ export const Login: React.FC = () => {
   const [password, setPassword] = useState('Admin@123');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotModal, setShowForgotModal] = useState(false);
   const { login, quickLoginAsRole } = useAuth();
   const navigate = useNavigate();
 
@@ -24,7 +25,7 @@ export const Login: React.FC = () => {
       navigate('/dashboard');
     } catch (err: any) {
       setError(
-        err?.response?.data?.detail || 'Invalid credentials. Please use the 1-Click Role Login buttons below or verify email.'
+        err?.response?.data?.detail || 'Invalid credentials. Please verify your work email and password.'
       );
     } finally {
       setIsLoading(false);
@@ -52,150 +53,243 @@ export const Login: React.FC = () => {
       label: 'Admin (Full Access)',
       email: 'admin@peoplepay360.com',
       pass: 'Admin@123',
-      color: 'bg-purple-50/80 text-purple-800 border-purple-200 hover:bg-purple-100 hover:border-purple-300',
-      desc: 'Universal management & user access'
+      color: 'bg-purple-900/30 text-purple-200 border-purple-700/50 hover:bg-purple-800/40',
+      desc: 'Universal management & full system access'
     },
     {
       role: 'HR_MANAGER',
       label: 'HR Manager',
       email: 'hrmanager@peoplepay360.com',
       pass: 'HrManager@123',
-      color: 'bg-blue-50/80 text-blue-800 border-blue-200 hover:bg-blue-100 hover:border-blue-300',
-      desc: 'Employee hub & leave approvals'
+      color: 'bg-blue-900/30 text-blue-200 border-blue-700/50 hover:bg-blue-800/40',
+      desc: 'Employee directory & leave approvals'
     },
     {
       role: 'HR_PAYROLL_MANAGER',
       label: 'Payroll Manager',
       email: 'payrollmanager@peoplepay360.com',
       pass: 'PayrollManager@123',
-      color: 'bg-emerald-50/80 text-emerald-800 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300',
-      desc: 'Validate payruns, approve & send PDFs'
+      color: 'bg-emerald-900/30 text-emerald-200 border-emerald-700/50 hover:bg-emerald-800/40',
+      desc: 'Validate payruns & disburse salaries'
     },
     {
       role: 'HR_PAYROLL_USER',
       label: 'Payroll Specialist',
       email: 'payrolluser@peoplepay360.com',
       pass: 'PayrollUser@123',
-      color: 'bg-amber-50/80 text-amber-800 border-amber-200 hover:bg-amber-100 hover:border-amber-300',
-      desc: 'Salary rules & calculation engine'
+      color: 'bg-amber-900/30 text-amber-200 border-amber-700/50 hover:bg-amber-800/40',
+      desc: 'Salary structures & compute engine'
     },
     {
       role: 'EMPLOYEE',
       label: 'Employee (Self-Service)',
       email: 'employee@peoplepay360.com',
       pass: 'Employee@123',
-      color: 'bg-slate-50 text-slate-800 border-slate-200 hover:bg-slate-100 hover:border-slate-300',
+      color: 'bg-slate-800/60 text-slate-200 border-slate-700 hover:bg-slate-800',
       desc: 'Punch attendance & view payslips'
     },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-10 sm:px-6 lg:px-8 selection:bg-primary-100 selection:text-primary-700">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="mx-auto h-12 w-12 rounded-2xl bg-primary-600 flex items-center justify-center text-white font-bold shadow-md shadow-primary-500/30 mb-3">
-          <Building2 className="h-6 w-6" />
-        </div>
-        <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-          People<span className="text-primary-600">Pay360</span>
-        </h2>
-        <p className="mt-1 text-xs text-slate-500 font-medium">
-          Enterprise HR, Payroll &amp; Compensation ERP
-        </p>
-      </div>
+    <div className="min-h-screen bg-[#0F1117] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 selection:bg-blue-600 selection:text-white relative font-sans text-slate-100 antialiased">
+      {/* Visual Accent Glows */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-6 sm:px-10 rounded-2xl border border-slate-200 shadow-card">
-          {error && (
-            <div className="mb-5 p-3 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2.5 text-rose-700 text-xs">
-              <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="Email Address"
-              type="email"
-              placeholder="e.g. admin@peoplepay360.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              leftIcon={<Mail className="h-4 w-4" />}
-            />
-
-            <Input
-              label="Password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              leftIcon={<Lock className="h-4 w-4" />}
-            />
-
-            <div className="flex items-center justify-between pt-1">
-              <label className="flex items-center text-xs text-slate-600 cursor-pointer">
-                <input
-                  type="checkbox"
-                  defaultChecked
-                  className="rounded border-slate-300 text-primary-600 focus:ring-primary-500 mr-2"
-                />
-                Remember me
-              </label>
-              <span className="text-xs text-slate-400">
-                Demo Mode Active
+      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
+        {/* Main HR Portal Card matching Wireframe */}
+        <div className="bg-[#181B25] rounded-2xl border border-slate-800 shadow-2xl overflow-hidden">
+          
+          {/* Card Top Header / Badge */}
+          <div className="px-6 py-3.5 bg-[#14161F] border-b border-slate-800/80 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="h-5 w-5 rounded bg-blue-600 flex items-center justify-center text-white text-xs font-bold">
+                <Building2 className="h-3.5 w-3.5" />
+              </div>
+              <span className="text-sm font-semibold text-slate-200 tracking-wide">
+                HR Portal
               </span>
             </div>
+            <span className="text-[11px] font-mono text-blue-400 bg-blue-950/80 border border-blue-800/60 px-2 py-0.5 rounded-full">
+              Enterprise v2.4
+            </span>
+          </div>
 
-            <Button
-              type="submit"
-              variant="primary"
-              className="w-full mt-2"
-              size="lg"
-              isLoading={isLoading}
-              icon={<ArrowRight className="h-4 w-4" />}
-            >
-              Sign In to PeoplePay360
-            </Button>
-          </form>
-
-          {/* 🌟 1-Click Role Login Panel */}
-          <div className="mt-8 pt-6 border-t border-slate-100">
-            <div className="flex items-center justify-center gap-1.5 mb-3">
-              <Sparkles className="h-3.5 w-3.5 text-primary-600" />
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
-                1-Click Demo Login Personas
+          <div className="p-6 sm:p-8">
+            {/* Welcome Heading & Subtitle */}
+            <div className="mb-6 text-left">
+              <h2 className="text-2xl font-bold text-white tracking-tight">
+                Welcome
+              </h2>
+              <p className="mt-1 text-xs text-slate-400 font-medium">
+                Sign in to continue to your account
               </p>
             </div>
-            <div className="space-y-2">
-              {demoRoles.map((r) => (
-                <button
-                  key={r.role}
-                  type="button"
-                  onClick={() => handleRoleQuickLogin(r.role, r.email, r.pass)}
-                  disabled={isLoading}
-                  className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-xs font-medium transition-all cursor-pointer shadow-xs ${r.color}`}
-                >
-                  <div className="flex items-center gap-2.5 text-left">
-                    <UserCheck className="h-4 w-4 shrink-0" />
-                    <div>
-                      <p className="font-bold leading-none">{r.label}</p>
-                      <p className="text-[10px] opacity-75 mt-0.5">{r.desc}</p>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-mono opacity-80 shrink-0 bg-white/70 px-2 py-0.5 rounded border border-current/10">
-                    Sign In &rarr;
-                  </span>
-                </button>
-              ))}
+
+            {error && (
+              <div className="mb-5 p-3.5 rounded-xl bg-rose-950/60 border border-rose-800/70 flex items-start gap-2.5 text-rose-300 text-xs">
+                <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5 text-rose-400" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {/* Login Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                  Work Email
+                </label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    placeholder="name@company.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="w-full rounded-xl border border-slate-800 bg-[#0F1117] px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-medium text-slate-300">
+                    Password
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotModal(true)}
+                    className="text-xs text-blue-400 hover:text-blue-300 hover:underline transition-colors font-medium cursor-pointer"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type="password"
+                    placeholder="••••••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="w-full rounded-xl border border-slate-800 bg-[#0F1117] px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full mt-3 bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm py-2.5 px-4 rounded-xl transition-all duration-150 flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 active:scale-[0.99] cursor-pointer disabled:opacity-50"
+              >
+                {isLoading ? (
+                  <span>Signing in...</span>
+                ) : (
+                  <>
+                    <span>Sign In</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Wireframe Text Notices */}
+            <div className="mt-6 pt-5 border-t border-slate-800/80 space-y-2.5 text-center">
+              <p className="text-xs text-slate-400 font-medium">
+                Accounts are created by an administrator.
+              </p>
+              <div className="p-3 rounded-xl bg-[#11131C] border border-slate-800 text-slate-300 text-xs font-normal leading-relaxed text-left flex items-start gap-2.5">
+                <ShieldCheck className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
+                <span>
+                  After sign-in, show only the entities and actions allowed by the user's assigned role.
+                </span>
+              </div>
             </div>
+
+            {/* 🌟 1-Click Role Switcher Demo Panel */}
+            <div className="mt-6 pt-5 border-t border-slate-800/80">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-blue-400" />
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    Quick Sign-In by Assigned Role
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-500 font-mono">5 RBAC Roles</span>
+              </div>
+
+              <div className="space-y-2">
+                {demoRoles.map((r) => (
+                  <button
+                    key={r.role}
+                    type="button"
+                    onClick={() => handleRoleQuickLogin(r.role, r.email, r.pass)}
+                    disabled={isLoading}
+                    className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-xs transition-all cursor-pointer ${r.color}`}
+                  >
+                    <div className="flex items-center gap-2.5 text-left">
+                      <UserCheck className="h-4 w-4 shrink-0 opacity-80" />
+                      <div>
+                        <p className="font-bold leading-none">{r.label}</p>
+                        <p className="text-[10px] opacity-70 mt-0.5">{r.desc}</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-mono opacity-90 shrink-0 bg-slate-900/80 px-2 py-0.5 rounded border border-white/10">
+                      Sign In &rarr;
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
           </div>
         </div>
 
-        <p className="text-center text-xs text-slate-400 mt-5">
-          PeoplePay360 Enterprise ERP &bull; Protected by JWT &amp; 5-Tier RBAC Architecture
-        </p>
+        {/* Footer Flow Label */}
+        <div className="mt-4 text-center">
+          <p className="text-xs text-slate-500 flex items-center justify-center gap-1.5">
+            <span>Successful sign in</span>
+            <ArrowRight className="h-3.5 w-3.5 text-blue-400" />
+            <span className="text-slate-400 font-medium">Redirects to Role-Filtered Dashboard</span>
+          </p>
+        </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[#181B25] border border-slate-800 rounded-2xl max-w-md w-full p-6 relative shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <button
+              onClick={() => setShowForgotModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-10 w-10 rounded-xl bg-blue-900/50 border border-blue-700/50 flex items-center justify-center text-blue-400">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Reset Password Assistance</h3>
+                <p className="text-xs text-slate-400">Security & Account Policy</p>
+              </div>
+            </div>
+            <div className="p-4 rounded-xl bg-[#11131C] border border-slate-800 text-xs text-slate-300 space-y-2 mb-5">
+              <p className="font-semibold text-slate-200">
+                Accounts are created and managed by an administrator.
+              </p>
+              <p>
+                To reset or recover your password, please contact your system administrator or HR Manager directly with your work email ID.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowForgotModal(false)}
+              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs py-2.5 px-4 rounded-xl transition-all cursor-pointer"
+            >
+              Got it, close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+

@@ -192,11 +192,14 @@ export const Dashboard: React.FC = () => {
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary-600" />
               <h2 className="text-base font-bold text-slate-900">
-                Live Role-Based Access Control (RBAC) Switcher
+                Live Role-Based Access Control (RBAC) Dashboard
               </h2>
+              <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full">
+                Active Policy: Role-Specific Entities &amp; Actions Only
+              </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Click any role below to instantly switch JWT permissions and test adaptive module access in real-time
+            <p className="text-xs text-slate-500 mt-1">
+              "After sign-in, show only the entities and actions allowed by the user's assigned role." Click any role below to switch personas and test restricted entity access.
             </p>
           </div>
           {isSwitchingRole && (
