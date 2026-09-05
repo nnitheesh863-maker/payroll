@@ -35,6 +35,10 @@ export interface Employee {
   position: string;
   joining_date: string;
   status: 'ACTIVE' | 'ON_LEAVE' | 'TERMINATED';
+  manager?: string;
+  work_location?: string;
+  company?: string;
+  working_hours?: string;
   bank_account_number?: string;
   bank_name?: string;
   bank_ifsc?: string;
@@ -50,6 +54,7 @@ export interface Employee {
 
 export interface Contract {
   id: number;
+  contract_code?: string;
   employee_id: number;
   contract_title: string;
   contract_type: string;
@@ -58,7 +63,9 @@ export interface Contract {
   wage: number;
   working_hours_per_week: number;
   salary_structure_id?: number;
-  status: 'ACTIVE' | 'EXPIRED' | 'TERMINATED' | 'DRAFT';
+  salary_structure_name?: string;
+  status: 'ACTIVE' | 'EXPIRED' | 'TERMINATED' | 'DRAFT' | 'Running' | 'Expired';
+  notes?: string;
   created_at?: string;
   employee?: Partial<Employee>;
 }

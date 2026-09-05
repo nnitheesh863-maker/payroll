@@ -10,6 +10,7 @@ import { Dashboard } from '../pages/Dashboard';
 import { EmployeeList } from '../pages/employees/EmployeeList';
 import { EmployeeDetails } from '../pages/employees/EmployeeDetails';
 import { ContractList } from '../pages/contracts/ContractList';
+import { ContractDetails } from '../pages/contracts/ContractDetails';
 import { AttendanceList } from '../pages/attendance/AttendanceList';
 import { TimeOffPage } from '../pages/timeoff/TimeOffPage';
 import { SalaryStructures } from '../pages/salary/SalaryStructures';
@@ -46,9 +47,10 @@ export const AppRoutes: React.FC = () => {
 
           {/* Protected Contracts */}
           <Route
-            element={<RoleRoute allowedRoles={['HR_MANAGER', 'HR_PAYROLL_MANAGER', 'ADMIN']} />}
+            element={<RoleRoute allowedRoles={['HR_MANAGER', 'HR_PAYROLL_MANAGER', 'ADMIN', 'HR_PAYROLL_USER', 'EMPLOYEE']} />}
           >
             <Route path="/contracts" element={<ContractList />} />
+            <Route path="/contracts/:id" element={<ContractDetails />} />
           </Route>
 
           {/* Protected Salary & Payroll */}
