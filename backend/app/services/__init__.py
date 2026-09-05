@@ -1,6 +1,6 @@
 """
 Services package — domain services for schedules, contracts, attendance,
-time off and salary configuration.
+time off, salary configuration, and payroll calculation.
 """
 
 from app.services.schedule_service import (
@@ -77,6 +77,23 @@ from app.services.salary_structure_service import (
     validate_structure,
     validate_structure_config,
 )
+from app.services.payroll_formula import (
+    PayrollDivisionByZeroError,
+    PayrollFormulaError,
+    UnknownFormulaVariableError,
+    UnsafeFormulaError,
+    evaluate_formula,
+)
+from app.services.payroll_calculation import (
+    MissingApplicableContractError,
+    MissingSalaryStructureError,
+    NoActiveRulesError,
+    PayrollCalculationError,
+    PayrollContext,
+    PayrollResult,
+    RuleEvaluationResult,
+    calculate_payroll,
+)
 
 __all__ = [
     "calculate_day_working_hours",
@@ -141,4 +158,17 @@ __all__ = [
     "deactivate_structure",
     "add_rule_to_structure",
     "get_structure_rules",
+    "PayrollFormulaError",
+    "UnsafeFormulaError",
+    "UnknownFormulaVariableError",
+    "PayrollDivisionByZeroError",
+    "evaluate_formula",
+    "PayrollCalculationError",
+    "MissingApplicableContractError",
+    "MissingSalaryStructureError",
+    "NoActiveRulesError",
+    "PayrollContext",
+    "PayrollResult",
+    "RuleEvaluationResult",
+    "calculate_payroll",
 ]
