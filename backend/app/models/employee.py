@@ -69,6 +69,12 @@ class Employee(Base, TimestampMixin):
         cascade="all, delete-orphan",
         order_by="EmploymentHistory.effective_from",
     )
+    contracts = db.relationship(
+        "Contract",
+        back_populates="employee",
+        cascade="all, delete-orphan",
+        order_by="Contract.start_date",
+    )
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<Employee {self.employee_code} {self.email}>"
