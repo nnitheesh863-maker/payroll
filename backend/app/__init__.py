@@ -8,13 +8,20 @@ from app.config import settings
 from app.extensions import db, migrate
 
 
-def create_app() -> Flask:
-    """Create and configure the Flask application."""
+def create_app(config_overrides: dict | None = None) -> Flask:
+    """Create and configure the Flask application.
+
+    ``config_overrides`` optionally replaces config values after the
+    defaults are loaded (used by tests to point at SQLite instead of
+    PostgreSQL). Production behaviour is unchanged when omitted.
+    """
     app = Flask(__name__)
 
     # ── Configuration (from environment / .env via app.config) ────
     app.config["SQLALCHEMY_DATABASE_URI"] = settings.DATABASE_URL
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    if config_overrides:
+        app.config.update(config_overrides)
 
     # ── Extensions ─────────────────────────────────────────────────
     db.init_app(app)

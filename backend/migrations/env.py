@@ -46,8 +46,7 @@ def _get_target_metadata():
 
 
 # Override sqlalchemy.url with the resolved URL so both CLIs agree.
-config.set_main_option("sqlalchemy.url", _get_url())
-
+config.set_main_option("sqlalchemy.url", _get_url().replace("%", "%%"))
 target_metadata = _get_target_metadata()
 
 
