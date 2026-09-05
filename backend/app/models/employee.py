@@ -34,7 +34,7 @@ class Employee(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
-    user = relationship("User", back_populates="employee", uselist=False)
+    user = relationship("User", back_populates="employee", uselist=False, foreign_keys="User.employee_id")
     contracts = relationship("Contract", back_populates="employee", cascade="all, delete-orphan")
     attendance_records = relationship("Attendance", back_populates="employee", cascade="all, delete-orphan")
     timeoff_requests = relationship("TimeOffRequest", back_populates="employee", foreign_keys="TimeOffRequest.employee_id", cascade="all, delete-orphan")

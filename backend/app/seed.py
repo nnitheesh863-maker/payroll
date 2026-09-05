@@ -1,17 +1,27 @@
 from datetime import date, datetime, timedelta
 from sqlalchemy.orm import Session
 from app.core.security import get_password_hash
-from app.models.user import User
-from app.models.employee import Employee
-from app.models.contract import Contract
-from app.models.attendance import Attendance
-from app.models.timeoff import TimeOffType, TimeOffAllocation, TimeOffRequest
-from app.models.salary_structure import SalaryStructure, SalaryRule
-from app.models.payrun import Payrun
-from app.models.payslip import Payslip
 from app.payroll_engine.calculator import PayrollCalculator
+from app.models import (
+    User,
+    Employee,
+    Contract,
+    Attendance,
+    TimeOffType,
+    TimeOffAllocation,
+    TimeOffRequest,
+    SalaryStructure,
+    SalaryRule,
+    Payrun,
+    Payslip,
+    AuditLog,
+)
+from app.core.database import Base, engine
 
 def seed_database(db: Session):
+    # Ensure all tables exist
+    Base.metadata.create_all(bind=engine)
+
     # Check if already seeded
     if db.query(User).count() > 0:
         print("[SEED] Database already contains records. Skipping seed.")
