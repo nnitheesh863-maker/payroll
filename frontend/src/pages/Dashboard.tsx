@@ -47,7 +47,13 @@ export const Dashboard: React.FC = () => {
   const [payruns, setPayruns] = useState<Payrun[]>([]);
   const [payslips, setPayslips] = useState<Payslip[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  
+  // ⚡ Chunk-by-chunk independent loading states
+  const [loadingMetrics, setLoadingMetrics] = useState(true);
+  const [loadingPayruns, setLoadingPayruns] = useState(true);
+  const [loadingPayslips, setLoadingPayslips] = useState(true);
+  const [loadingEmployees, setLoadingEmployees] = useState(true);
+
   const { user } = useAuth();
 
   // 🎛️ Interactive Filters
@@ -56,27 +62,39 @@ export const Dashboard: React.FC = () => {
   const [selectedEmpType, setSelectedEmpType] = useState<string>('ALL');
   const [selectedCompany, setSelectedCompany] = useState<string>('ALL');
 
-  const fetchDashboardData = async () => {
-    try {
-      const [m, prList, psList, empList] = await Promise.all([
-        dashboardApi.getMetrics().catch(() => null),
-        payrollApi.listPayruns().catch(() => []),
-        payslipApi.list().catch(() => []),
-        employeeApi.list().catch(() => []),
-      ]);
-      setMetrics(m);
-      setPayruns(prList);
-      setPayslips(psList);
-      setEmployees(empList);
-    } catch (err) {
-      console.error('Failed to load dashboard metrics:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // Load each chunk asynchronously and independently so the page renders instantly
   useEffect(() => {
-    fetchDashboardData();
+    // Chunk 1: Metrics & KPIs
+    setLoadingMetrics(true);
+    dashboardApi
+      .getMetrics()
+      .then((data) => setMetrics(data))
+      .catch(() => {})
+      .finally(() => setLoadingMetrics(false));
+
+    // Chunk 2: Payruns
+    setLoadingPayruns(true);
+    payrollApi
+      .listPayruns()
+      .then((data) => setPayruns(data || []))
+      .catch(() => setPayruns([]))
+      .finally(() => setLoadingPayruns(false));
+
+    // Chunk 3: Payslips
+    setLoadingPayslips(true);
+    payslipApi
+      .list()
+      .then((data) => setPayslips(data || []))
+      .catch(() => setPayslips([]))
+      .finally(() => setLoadingPayslips(false));
+
+    // Chunk 4: Employees
+    setLoadingEmployees(true);
+    employeeApi
+      .list()
+      .then((data) => setEmployees(data || []))
+      .catch(() => setEmployees([]))
+      .finally(() => setLoadingEmployees(false));
   }, [user]);
 
   // Dynamic calculations based on filters & actual data
@@ -159,10 +177,6 @@ export const Dashboard: React.FC = () => {
     { name: 'Computed', value: filteredMetrics.computedPayslips, color: '#F59E0B' },
     { name: 'Draft', value: filteredMetrics.draftPayslips, color: '#8C532B' },
   ];
-
-  if (isLoading) {
-    return <LoadingSpinner text="Loading PeoplePay360 real-time dashboard..." />;
-  }
 
   const statCards = [
     {
