@@ -217,14 +217,16 @@ def _encode(payload: dict) -> str:
 
 def create_access_token(user) -> str:
     now = datetime.now(timezone.utc)
-    email = user.get("email") if isinstance(user, dict) else getattr(user, "email", str(user.id))
-    role = user.get("role") if isinstance(user, dict) else getattr(user, "role", "ADMIN")
-    user_id = user.get("id") if isinstance(user, dict) else getattr(user, "id", 1)
-    
+    if isinstance(user, dict):
+        user_id = user.get("id")
+        role = user.get("role", "ADMIN")
+    else:
+        user_id = getattr(user, "id", None)
+        role = getattr(user, "role", "ADMIN")
+
     return _encode(
         {
-            "sub": str(email),
-            "id": str(user_id),
+            "sub": str(user_id),
             "role": role,
             "type": TOKEN_TYPE_ACCESS,
             "iat": int(now.timestamp()),
@@ -240,14 +242,16 @@ def create_access_token(user) -> str:
 
 def create_refresh_token(user) -> str:
     now = datetime.now(timezone.utc)
-    email = user.get("email") if isinstance(user, dict) else getattr(user, "email", str(user.id))
-    role = user.get("role") if isinstance(user, dict) else getattr(user, "role", "ADMIN")
-    user_id = user.get("id") if isinstance(user, dict) else getattr(user, "id", 1)
+    if isinstance(user, dict):
+        user_id = user.get("id")
+        role = user.get("role", "ADMIN")
+    else:
+        user_id = getattr(user, "id", None)
+        role = getattr(user, "role", "ADMIN")
 
     return _encode(
         {
-            "sub": str(email),
-            "id": str(user_id),
+            "sub": str(user_id),
             "role": role,
             "type": TOKEN_TYPE_REFRESH,
             "iat": int(now.timestamp()),
@@ -262,27 +266,21 @@ def create_refresh_token(user) -> str:
 
 def decode_token(token: str, *, expected_type: str = TOKEN_TYPE_ACCESS) -> dict:
     """Verify signature/expiry/type; returns claims or raises AuthTokenError."""
+    if not token or not isinstance(token, str):
+        raise AuthTokenError("Invalid token.")
+
     secret = getattr(settings, "JWT_SECRET_KEY", "peoplepay360-jwt-secret-2026")
     try:
         claims = jwt.decode(token, secret, algorithms=["HS256"])
-        return claims
-    except Exception:
-        # Fallback for base64 encoded test tokens
-        try:
-            parts = token.split(".")
-            if len(parts) >= 2:
-                payload = json.loads(base64.b64decode(parts[1] + "==").decode())
-                if "sub" in payload or "email" in payload:
-                    return {
-                        "sub": payload.get("sub", payload.get("email")),
-                        "id": payload.get("id", 1),
-                        "role": payload.get("role", "ADMIN"),
-                        "type": expected_type,
-                    }
-        except Exception:
-            pass
+    except jwt.ExpiredSignatureError as err:
+        raise AuthTokenError("Token has expired.") from err
+    except Exception as err:
+        raise AuthTokenError("Invalid token.") from err
 
-    raise AuthTokenError("Invalid or expired token.")
+    if expected_type is not None and claims.get("type") != expected_type:
+        raise AuthTokenError(f"Expected token type '{expected_type}', got '{claims.get('type')}'.")
+
+    return claims
 
 
 class PersonaUser:
@@ -302,6 +300,7 @@ class PersonaUser:
             "full_name": self.full_name,
             "role": self.role,
             "is_active": self.is_active,
+            "employee_id": self.employee_id,
         }
 
 
@@ -309,33 +308,48 @@ def get_user_from_token(session, claims: dict):
     """Resolve the token identity to an active user."""
     from app.api.auth import DEFAULT_USERS
 
-    sub = str(claims.get("sub", "")).lower().strip()
-    
+    # Refresh tokens cannot be used to authenticate requests
+    if claims.get("type") != TOKEN_TYPE_ACCESS:
+        return None
+
+    sub = str(claims.get("sub", "")).strip()
+    if not sub:
+        return None
+
     # 1. Check database if session is alive
     try:
         from app.models.user import User
-        if "-" in sub: # Looks like UUID
+        db_user = None
+        try:
             uid = uuid.UUID(sub)
-            user = session.get(User, uid)
-            if user is not None and user.is_active:
-                return user
-        else:
-            user = session.query(User).filter_by(email=sub).first()
-            if user is not None and user.is_active:
-                return user
+            db_user = session.get(User, uid)
+        except (ValueError, AttributeError, TypeError):
+            pass
+
+        if db_user is None:
+            db_user = session.query(User).filter(
+                (User.id == sub) | (User.email == sub.lower())
+            ).first()
+
+        if db_user is not None:
+            if not db_user.is_active:
+                return None
+            return db_user
     except Exception:
         pass
 
     # 2. Check in-memory enterprise personas
     for email, u in DEFAULT_USERS.items():
-        if sub == email.lower() or sub == str(u.get("id")):
+        if sub.lower() == email.lower() or sub == str(u.get("id")):
+            if not u.get("is_active", True):
+                return None
             return PersonaUser(u)
 
-    # 3. Default fallback for admin token
+    # 3. Default fallback for testing personas
     if claims.get("role") in ROLES:
         return PersonaUser({
-            "id": claims.get("id", 1),
-            "email": sub or "admin@peoplepay360.com",
+            "id": sub,
+            "email": sub if "@" in sub else f"{sub.lower()}@peoplepay360.com",
             "full_name": "Active User",
             "role": claims.get("role", "ADMIN"),
             "is_active": True,
