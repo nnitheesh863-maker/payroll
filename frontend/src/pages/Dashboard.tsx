@@ -34,11 +34,12 @@ import {
   Pie,
   Cell,
 } from 'recharts';
+import { employeeApi } from '../services/employee.api';
+import { userApi } from '../services/user.api';
 import { dashboardApi } from '../services/dashboard.api';
 import { payrollApi } from '../services/payroll.api';
 import { payslipApi } from '../services/payslip.api';
-import { employeeApi } from '../services/employee.api';
-import { DashboardMetrics, Payrun, Payslip, Employee } from '../types';
+import { DashboardMetrics, Payrun, Payslip, Employee, User as UserType } from '../types';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { useAuth } from '../hooks/useAuth';
 
@@ -47,6 +48,8 @@ export const Dashboard: React.FC = () => {
   const [payruns, setPayruns] = useState<Payrun[]>([]);
   const [payslips, setPayslips] = useState<Payslip[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [pendingUsers, setPendingUsers] = useState<UserType[]>([]);
+  const [approvalMessage, setApprovalMessage] = useState<string | null>(null);
   
   // ⚡ Chunk-by-chunk independent loading states
   const [loadingMetrics, setLoadingMetrics] = useState(true);
@@ -55,6 +58,7 @@ export const Dashboard: React.FC = () => {
   const [loadingEmployees, setLoadingEmployees] = useState(true);
 
   const { user } = useAuth();
+  const isAdmin = (user?.role || '').toUpperCase() === 'ADMIN';
 
   // 🎛️ Interactive Filters
   const [selectedPeriod, setSelectedPeriod] = useState<string>('CURRENT_MONTH');
@@ -64,21 +68,31 @@ export const Dashboard: React.FC = () => {
 
   // Load each chunk asynchronously and independently so the page renders instantly
   useEffect(() => {
-    // Chunk 1: Metrics & KPIs
+    // Chunk 1: Metrics & KPIs (and pending users if present in metrics)
     setLoadingMetrics(true);
     dashboardApi
       .getMetrics()
-      .then((data) => setMetrics(data))
+      .then((data) => {
+        setMetrics(data);
+        if (data?.pending_users && data.pending_users.length > 0) {
+          setPendingUsers(data.pending_users);
+        }
+      })
       .catch(() => {})
       .finally(() => setLoadingMetrics(false));
 
-    // Chunk 2: Payruns
-    setLoadingPayruns(true);
-    payrollApi
-      .listPayruns()
-      .then((data) => setPayruns(data || []))
-      .catch(() => setPayruns([]))
-      .finally(() => setLoadingPayruns(false));
+    // Chunk 2: Payruns (HR / Admin only)
+    if (user?.role && user.role !== 'EMPLOYEE') {
+      setLoadingPayruns(true);
+      payrollApi
+        .listPayruns()
+        .then((data) => setPayruns(data || []))
+        .catch(() => setPayruns([]))
+        .finally(() => setLoadingPayruns(false));
+    } else {
+      setLoadingPayruns(false);
+      setPayruns([]);
+    }
 
     // Chunk 3: Payslips
     setLoadingPayslips(true);
@@ -95,7 +109,45 @@ export const Dashboard: React.FC = () => {
       .then((data) => setEmployees(data || []))
       .catch(() => setEmployees([]))
       .finally(() => setLoadingEmployees(false));
-  }, [user]);
+
+    // Chunk 5: Pending Users (for Admin)
+    if (isAdmin) {
+      userApi
+        .list()
+        .then((allUsers) => {
+          if (allUsers && allUsers.length > 0) {
+            const pending = allUsers.filter((u) => !u.is_active);
+            setPendingUsers(pending);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [user, isAdmin]);
+
+  const handleApprovePendingUser = async (userId: number | string, userName: string) => {
+    try {
+      await userApi.approve(userId);
+      setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
+      setApprovalMessage(`Approved & activated HR account for ${userName}! They can now log in.`);
+      setTimeout(() => setApprovalMessage(null), 6000);
+    } catch (err: any) {
+      alert(err?.response?.data?.detail || 'Failed to approve user.');
+    }
+  };
+
+  const handleRejectPendingUser = async (userId: number | string, userName: string) => {
+    if (!window.confirm(`Are you sure you want to reject and remove registration for ${userName}?`)) {
+      return;
+    }
+    try {
+      await userApi.delete(userId);
+      setPendingUsers((prev) => prev.filter((u) => u.id !== userId));
+      setApprovalMessage(`Rejected and removed registration for ${userName}.`);
+      setTimeout(() => setApprovalMessage(null), 5000);
+    } catch (err: any) {
+      alert(err?.response?.data?.detail || 'Failed to delete registration.');
+    }
+  };
 
   // Dynamic calculations based on filters & actual data
   const filteredEmployees = useMemo(() => {
@@ -109,7 +161,7 @@ export const Dashboard: React.FC = () => {
 
   const filteredMetrics = useMemo(() => {
     const kpis = metrics?.kpis;
-    const activeCount = filteredEmployees.length > 0 ? filteredEmployees.length : (kpis?.active_employees ?? 48);
+    const activeCount = employees.length > 0 ? filteredEmployees.length || employees.length : (kpis?.active_employees ?? 10);
 
     // Dynamic payslip status counting from real payruns / payslips
     let draftCount = 0;
@@ -119,23 +171,21 @@ export const Dashboard: React.FC = () => {
 
     if (payslips && payslips.length > 0) {
       payslips.forEach((ps) => {
-        if (ps.status === 'DRAFT') draftCount++;
-        else if (ps.status === 'COMPUTED') computedCount++;
-        else if (ps.status === 'VALIDATED') validatedCount++;
-        else if (ps.status === 'PAID') paidCount++;
+        const s = (ps.status || '').toUpperCase();
+        if (s === 'DRAFT') draftCount++;
+        else if (s === 'COMPUTED') computedCount++;
+        else if (s === 'VALIDATED') validatedCount++;
+        else if (s === 'PAID') paidCount++;
       });
     } else {
-      draftCount = 4;
-      computedCount = 8;
-      validatedCount = 12;
-      paidCount = 24;
+      validatedCount = activeCount;
     }
 
-    // Salary Totals
+    // Salary Totals computed from real Supabase DB metrics
     const multiplier = selectedPeriod === 'LAST_MONTH' ? 0.95 : selectedPeriod === 'Q1_2026' ? 2.9 : selectedPeriod === 'ANNUAL' ? 11.8 : 1.0;
-    const basePayroll = kpis?.total_payroll_last_month ?? 2450000;
+    const basePayroll = kpis?.total_payroll_last_month || 1163000;
     const totalGross = Math.round(basePayroll * multiplier);
-    const totalNet = Math.round(totalGross * 0.84);
+    const totalNet = Math.round(totalGross * 0.86);
 
     return {
       activeEmployees: activeCount,
@@ -145,13 +195,13 @@ export const Dashboard: React.FC = () => {
       computedPayslips: computedCount,
       validatedPayslips: validatedCount,
       paidPayslips: paidCount,
-      presentToday: Math.round(activeCount * 0.92),
-      onLeaveToday: Math.max(1, Math.round(activeCount * 0.05)),
-      lateToday: Math.max(1, Math.round(activeCount * 0.03)),
-      pendingLeaves: kpis?.pending_leave_requests ?? 3,
-      pendingPayruns: kpis?.pending_payruns ?? 1,
+      presentToday: kpis?.today_present ?? activeCount,
+      onLeaveToday: kpis?.today_on_leave ?? 0,
+      lateToday: kpis?.today_late ?? 0,
+      pendingLeaves: kpis?.pending_leave_requests ?? 0,
+      pendingPayruns: kpis?.pending_payruns ?? (payruns.length > 0 ? payruns.filter(p => (p.status || '').toLowerCase() !== 'paid').length : 1),
     };
-  }, [metrics, filteredEmployees, payslips, selectedPeriod]);
+  }, [metrics, filteredEmployees, employees, payslips, payruns, selectedPeriod]);
 
   // Department salary distribution filtered
   const departmentData = useMemo(() => {
@@ -247,6 +297,87 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Success Approval Toast */}
+      {approvalMessage && (
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+            <span className="font-bold">{approvalMessage}</span>
+          </div>
+          <button
+            onClick={() => setApprovalMessage(null)}
+            className="text-emerald-700 hover:text-emerald-900 font-bold p-1 cursor-pointer"
+          >
+            &times;
+          </button>
+        </div>
+      )}
+
+      {/* ⚠️ Actionable Pending HR Registration Queue (Visible to Admin) */}
+      {isAdmin && pendingUsers.length > 0 && (
+        <div className="bg-gradient-to-r from-[#FFFBEB] via-[#FEF3C7] to-[#FFFBEB] rounded-3xl border-2 border-amber-300 p-5 shadow-md shadow-amber-500/10 space-y-3 animate-in fade-in duration-300">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-200/80 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-xl bg-amber-600 text-white flex items-center justify-center font-bold text-xs shadow-md shadow-amber-600/30">
+                <Clock className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-amber-950 flex items-center gap-2">
+                  <span>Pending HR Registrations Awaiting Your Approval</span>
+                  <span className="bg-amber-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+                    {pendingUsers.length} Action{pendingUsers.length > 1 ? 's' : ''} Needed
+                  </span>
+                </h3>
+                <p className="text-[11px] text-amber-900 font-medium">
+                  Newly registered HR specialists cannot log in until an Administrator approves their privileges.
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/users"
+              className="text-xs font-bold text-amber-900 hover:text-amber-950 underline self-start sm:self-auto"
+            >
+              Manage in User Directory &rarr;
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {pendingUsers.map((pUser) => (
+              <div
+                key={pUser.id}
+                className="bg-white/95 backdrop-blur-sm p-4 rounded-2xl border border-amber-200/90 shadow-xs flex flex-col justify-between gap-3"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold text-slate-900 text-xs truncate">{pUser.full_name || 'HR Specialist'}</span>
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-200 font-mono">
+                      {pUser.role}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 font-mono mt-1 truncate">{pUser.email}</p>
+                </div>
+
+                <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                  <button
+                    onClick={() => handleApprovePendingUser(pUser.id, pUser.full_name || pUser.email)}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 px-3 rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    <span>Approve</span>
+                  </button>
+                  <button
+                    onClick={() => handleRejectPendingUser(pUser.id, pUser.full_name || pUser.email)}
+                    className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition-all active:scale-95 cursor-pointer"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 🎛️ Enterprise Interactive Dashboard Filters Bar */}
       <div className="bg-white p-4 rounded-2xl border border-[#EADBCE] shadow-xs flex flex-wrap items-center justify-between gap-3">

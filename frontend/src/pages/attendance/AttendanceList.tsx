@@ -121,19 +121,172 @@ export const AttendanceList: React.FC = () => {
     notes: 'Manual attendance log created by admin.',
   });
 
-  const filteredRecords = records.filter((r) => {
-    const matchesSearch =
-      r.employee_name.toLowerCase().includes(search.toLowerCase()) ||
-      r.department.toLowerCase().includes(search.toLowerCase()) ||
-      r.status.toLowerCase().includes(search.toLowerCase());
+  // Live Indian Standard Time (IST) Clock
+  const [currentISTTime, setCurrentISTTime] = useState<Date>(new Date());
+  const [myCheckInStatus, setMyCheckInStatus] = useState<boolean>(true);
+  const [myCheckInTime, setMyCheckInTime] = useState<string>('09:15 AM');
+  const [punchFeedback, setPunchFeedback] = useState<string | null>(null);
 
-    if (!matchesSearch) return false;
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentISTTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
-    if (filterMode === 'TODAY') return r.date === '02-Sep-2026';
-    if (filterMode === 'AARAV') return r.employee_name === 'Aarav Mehta';
+  const getISTTimeString = (date: Date) => {
+    return date.toLocaleTimeString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
 
-    return true;
-  });
+  // Precise Time to Minutes Parser (handles "03:42 am", "09:15", "18:10", "03:42:00 PM IST", etc.)
+  const parseTimeToMinutes = (timeStr: string): number | null => {
+    if (!timeStr || timeStr === '-' || timeStr.trim() === '') return null;
+    const clean = timeStr.trim().toLowerCase();
+    const isPM = clean.includes('pm');
+    const isAM = clean.includes('am');
+    const timeOnly = clean.replace(/am|pm|ist/g, '').trim();
+    const parts = timeOnly.split(':').map(Number);
+    if (parts.length === 0 || isNaN(parts[0])) return null;
+
+    let hours = parts[0];
+    const mins = parts[1] || 0;
+    const secs = parts[2] || 0;
+
+    if (isPM && hours < 12) hours += 12;
+    if (isAM && hours === 12) hours = 0;
+
+    return hours * 60 + mins + secs / 60;
+  };
+
+  const calculateExactWorkedHours = (checkIn: string, checkOut: string): number => {
+    const startMins = parseTimeToMinutes(checkIn);
+    const endMins = parseTimeToMinutes(checkOut);
+    if (startMins === null || endMins === null) return 0.0;
+    let diff = endMins - startMins;
+    if (diff < 0) {
+      // Handles overnight shifts across midnight
+      diff += 24 * 60;
+    }
+    const hours = diff / 60;
+    return Math.round(hours * 100) / 100;
+  };
+
+  const handleQuickCheckIn = () => {
+    const timeStr = getISTTimeString(new Date());
+    setMyCheckInStatus(true);
+    setMyCheckInTime(timeStr);
+    
+    // Add / update record in list for current user
+    const currentUserName = user?.full_name || 'David Kumar';
+    const existingIndex = records.findIndex((r) => r.employee_name.toLowerCase() === currentUserName.toLowerCase());
+    
+    if (existingIndex >= 0) {
+      const updated = [...records];
+      updated[existingIndex] = {
+        ...updated[existingIndex],
+        check_in: timeStr,
+        check_out: '-',
+        worked_hours: 0.0,
+        overtime_hours: 0.0,
+        status: 'Present',
+        notes: `Punched in at ${timeStr} IST via Quick Check In.`,
+      };
+      setRecords(updated);
+    } else {
+      const newRec: WireframeAttendanceRecord = {
+        id: Date.now(),
+        employee_id: 10,
+        employee_name: currentUserName,
+        department: 'Operations',
+        manager: 'Sara Khan',
+        date: '06-Sep-2026',
+        check_in: timeStr,
+        check_out: '-',
+        worked_hours: 0.0,
+        overtime_hours: 0.0,
+        status: 'Present',
+        notes: `Punched in at ${timeStr} IST.`,
+      };
+      setRecords([newRec, ...records]);
+    }
+
+    setPunchFeedback(`Checked in successfully at ${timeStr} IST!`);
+    setTimeout(() => setPunchFeedback(null), 3500);
+  };
+
+  const handleQuickCheckOut = () => {
+    const timeStr = getISTTimeString(new Date());
+    setMyCheckInStatus(false);
+    
+    const currentUserName = user?.full_name || 'David Kumar';
+    const updated = records.map((r) => {
+      if (r.employee_name.toLowerCase() === currentUserName.toLowerCase() || (r.id === 1 && currentUserName === 'User')) {
+        const exactHours = calculateExactWorkedHours(r.check_in !== '-' ? r.check_in : myCheckInTime, timeStr);
+        const overtime = Math.max(0, exactHours - 8.0);
+        return {
+          ...r,
+          check_out: timeStr,
+          worked_hours: exactHours,
+          overtime_hours: Math.round(overtime * 100) / 100,
+          status: 'Present' as const,
+          notes: `Checked out at ${timeStr} IST. Exact worked time: ${exactHours.toFixed(2)} hrs.`,
+        };
+      }
+      return r;
+    });
+    setRecords(updated);
+
+    setPunchFeedback(`Checked out successfully at ${timeStr} IST! Exact work hours updated.`);
+    setTimeout(() => setPunchFeedback(null), 3500);
+  };
+
+  const handleRowCheckIn = (e: React.MouseEvent, recId: number) => {
+    e.stopPropagation();
+    const timeStr = getISTTimeString(new Date());
+    setRecords((prev) =>
+      prev.map((r) =>
+        r.id === recId
+          ? {
+              ...r,
+              check_in: timeStr,
+              check_out: '-',
+              worked_hours: 0.0,
+              status: 'Present',
+              notes: `Checked in at ${timeStr} IST.`,
+            }
+          : r
+      )
+    );
+    setPunchFeedback(`Check In recorded at ${timeStr} IST.`);
+    setTimeout(() => setPunchFeedback(null), 3000);
+  };
+
+  const handleRowCheckOut = (e: React.MouseEvent, recId: number) => {
+    e.stopPropagation();
+    const timeStr = getISTTimeString(new Date());
+    setRecords((prev) =>
+      prev.map((r) => {
+        if (r.id === recId) {
+          const exactHours = calculateExactWorkedHours(r.check_in, timeStr);
+          const overtime = Math.max(0, exactHours - 8.0);
+          return {
+            ...r,
+            check_out: timeStr,
+            worked_hours: exactHours,
+            overtime_hours: Math.round(overtime * 100) / 100,
+            status: 'Present',
+            notes: `Checked out at ${timeStr} IST. Exact worked time: ${exactHours.toFixed(2)} hrs.`,
+          };
+        }
+        return r;
+      })
+    );
+    setPunchFeedback(`Check Out recorded at ${timeStr} IST.`);
+    setTimeout(() => setPunchFeedback(null), 3000);
+  };
 
   const openRecordForm = (rec: WireframeAttendanceRecord) => {
     setSelectedRecord(rec);
@@ -145,14 +298,26 @@ export const AttendanceList: React.FC = () => {
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedRecord) return;
-    const updated = { ...selectedRecord, ...editFormData };
+    const computedHours =
+      editFormData.check_in && editFormData.check_out && editFormData.check_out !== '-'
+        ? calculateExactWorkedHours(editFormData.check_in, editFormData.check_out)
+        : editFormData.worked_hours ?? selectedRecord.worked_hours;
+    const updated = {
+      ...selectedRecord,
+      ...editFormData,
+      worked_hours: computedHours,
+      overtime_hours: Math.max(0, Math.round((computedHours - 8.0) * 100) / 100),
+    };
     setRecords((prev) => prev.map((r) => (r.id === selectedRecord.id ? updated : r)));
     setSelectedRecord(updated);
     setIsEditing(false);
+    setPunchFeedback(`Attendance log updated with ${computedHours.toFixed(2)} hrs.`);
+    setTimeout(() => setPunchFeedback(null), 3000);
   };
 
   const handleCreateAttendance = (e: React.FormEvent) => {
     e.preventDefault();
+    const computedHours = calculateExactWorkedHours(newAttendance.check_in, newAttendance.check_out);
     const created: WireframeAttendanceRecord = {
       id: Date.now(),
       employee_id: 1,
@@ -162,14 +327,30 @@ export const AttendanceList: React.FC = () => {
       date: newAttendance.date,
       check_in: newAttendance.check_in,
       check_out: newAttendance.check_out,
-      worked_hours: Number(newAttendance.worked_hours),
-      overtime_hours: Math.max(0, Number(newAttendance.worked_hours) - 8),
+      worked_hours: computedHours,
+      overtime_hours: Math.max(0, Math.round((computedHours - 8.0) * 100) / 100),
       status: newAttendance.status,
       notes: newAttendance.notes,
     };
     setRecords((prev) => [created, ...prev]);
     setIsCreateModalOpen(false);
+    setPunchFeedback(`New attendance record logged (${computedHours.toFixed(2)} hrs).`);
+    setTimeout(() => setPunchFeedback(null), 3000);
   };
+
+  const filteredRecords = records.filter((r) => {
+    const matchesSearch =
+      r.employee_name.toLowerCase().includes(search.toLowerCase()) ||
+      r.department.toLowerCase().includes(search.toLowerCase()) ||
+      r.status.toLowerCase().includes(search.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    if (filterMode === 'TODAY') return r.date === '02-Sep-2026' || r.date === '06-Sep-2026';
+    if (filterMode === 'AARAV') return r.employee_name === 'Aarav Mehta';
+
+    return true;
+  });
 
   return (
     <div className="space-y-6">
@@ -183,18 +364,71 @@ export const AttendanceList: React.FC = () => {
             </span>
           </h1>
           <p className="text-xs font-medium text-slate-500 mt-0.5">
-            List view of employee attendance records &bull; Review raw check-in / check-out data
+            List view of employee attendance records &bull; Review raw check-in / check-out data &bull; Live IST Sync
           </p>
         </div>
 
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm shadow-blue-500/20 active:scale-95 cursor-pointer self-start sm:self-auto"
+          className="inline-flex items-center gap-2 bg-[#8C532B] hover:bg-[#7B3F1B] text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-sm shadow-[#8C532B]/20 active:scale-95 cursor-pointer self-start sm:self-auto"
         >
           <Plus className="h-4 w-4" />
           <span>New Attendance</span>
         </button>
       </div>
+
+      {/* 🚀 QUICK PUNCH / CHECK-IN & CHECK-OUT ACTION BAR */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-[#1e1b18] p-5 rounded-3xl text-white shadow-xl border border-slate-700 flex flex-col md:flex-row items-center justify-between gap-5">
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <div className="h-12 w-12 rounded-2xl bg-[#8C532B]/30 border border-[#8C532B]/50 flex items-center justify-center text-white shrink-0 shadow-inner">
+            <Clock className="h-6 w-6 text-[#EADBCE] animate-pulse" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-400">Current India Time (IST):</span>
+              <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800/80 px-2 py-0.5 rounded">
+                {getISTTimeString(currentISTTime)}
+              </span>
+            </div>
+            <h3 className="text-base font-extrabold text-white tracking-tight mt-0.5">
+              Attendance Punch Terminal
+            </h3>
+            <p className="text-xs text-slate-400">
+              Logged in as <strong className="text-slate-200">{user?.full_name || 'Staff Associate'}</strong> &bull; Status:{' '}
+              <span className={myCheckInStatus ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
+                {myCheckInStatus ? `Checked In (${myCheckInTime})` : 'Clocked Out'}
+              </span>
+            </p>
+          </div>
+        </div>
+
+        {/* Action Buttons: Check In & Check Out */}
+        <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+          <button
+            onClick={handleQuickCheckIn}
+            className="flex-1 md:flex-none py-2.5 px-5 rounded-xl font-bold text-xs bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white transition-all shadow-lg shadow-emerald-600/30 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+          >
+            <Check className="h-4 w-4" />
+            <span>Check In (Start Shift)</span>
+          </button>
+
+          <button
+            onClick={handleQuickCheckOut}
+            className="flex-1 md:flex-none py-2.5 px-5 rounded-xl font-bold text-xs bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white transition-all shadow-lg shadow-amber-600/30 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+          >
+            <X className="h-4 w-4" />
+            <span>Check Out (End Shift)</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Punch Feedback Alert */}
+      {punchFeedback && (
+        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-800 flex items-center gap-2 animate-in fade-in">
+          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+          <span>{punchFeedback}</span>
+        </div>
+      )}
 
       {/* Filter and Search Bar matching Wireframe Screen 1 */}
       <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/90 shadow-soft flex flex-col md:flex-row gap-3 items-center justify-between">
@@ -204,7 +438,7 @@ export const AttendanceList: React.FC = () => {
             onClick={() => setFilterMode('ALL')}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               filterMode === 'ALL'
-                ? 'bg-blue-600 text-white shadow-xs'
+                ? 'bg-[#8C532B] text-white shadow-xs'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
@@ -219,7 +453,7 @@ export const AttendanceList: React.FC = () => {
                 : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200/70'
             }`}
           >
-            Today (02-Sep-2026)
+            Today's Shifts
           </button>
 
           <button
@@ -241,7 +475,7 @@ export const AttendanceList: React.FC = () => {
               placeholder="Search attendance..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:border-blue-600 focus:outline-none"
+              className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:bg-white focus:border-[#8C532B] focus:outline-none"
             />
           </div>
         </div>
@@ -258,7 +492,7 @@ export const AttendanceList: React.FC = () => {
                 <th className="py-3.5 px-4">Check Out</th>
                 <th className="py-3.5 px-4">Worked Hours</th>
                 <th className="py-3.5 px-4">Status</th>
-                <th className="py-3.5 px-4 text-right">Detail</th>
+                <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
@@ -278,26 +512,48 @@ export const AttendanceList: React.FC = () => {
                     {/* Employee */}
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-full bg-slate-900 text-white font-bold flex items-center justify-center text-xs shrink-0">
+                        <div className="h-8 w-8 rounded-full bg-[#8C532B] text-white font-bold flex items-center justify-center text-xs shrink-0 shadow-xs">
                           {r.employee_name.split(' ').map((n) => n[0]).join('')}
                         </div>
                         <div>
-                          <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                          <p className="font-bold text-slate-900 group-hover:text-[#8C532B] transition-colors">
                             {r.employee_name}
                           </p>
-                          <p className="text-[11px] text-slate-400">{r.department}</p>
+                          <p className="text-[11px] text-slate-400">{r.department} &bull; {r.date}</p>
                         </div>
                       </div>
                     </td>
 
                     {/* Check In */}
-                    <td className="py-3.5 px-4 font-mono font-semibold text-slate-700">
-                      {r.check_in}
+                    <td className="py-3.5 px-4">
+                      {r.check_in !== '-' ? (
+                        <span className="font-mono font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">
+                          {r.check_in}
+                        </span>
+                      ) : (
+                        <button
+                          onClick={(e) => handleRowCheckIn(e, r.id)}
+                          className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-colors cursor-pointer flex items-center gap-1"
+                        >
+                          <Check className="h-3 w-3" /> Punch In
+                        </button>
+                      )}
                     </td>
 
                     {/* Check Out */}
-                    <td className="py-3.5 px-4 font-mono font-semibold text-slate-700">
-                      {r.check_out}
+                    <td className="py-3.5 px-4">
+                      {r.check_out !== '-' ? (
+                        <span className="font-mono font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">
+                          {r.check_out}
+                        </span>
+                      ) : (
+                        <button
+                          onClick={(e) => handleRowCheckOut(e, r.id)}
+                          className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 transition-colors cursor-pointer flex items-center gap-1"
+                        >
+                          <Clock className="h-3 w-3" /> Punch Out
+                        </button>
+                      )}
                     </td>
 
                     {/* Worked Hours */}
@@ -323,9 +579,14 @@ export const AttendanceList: React.FC = () => {
                       </span>
                     </td>
 
-                    {/* Action Chevron */}
+                    {/* Action */}
                     <td className="py-3.5 px-4 text-right">
-                      <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-900 transition-colors inline" />
+                      <div className="flex items-center justify-end gap-1.5">
+                        <span className="text-[11px] font-bold text-[#8C532B] group-hover:underline">
+                          View &amp; Edit
+                        </span>
+                        <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-900 transition-colors inline" />
+                      </div>
                     </td>
                   </tr>
                 ))

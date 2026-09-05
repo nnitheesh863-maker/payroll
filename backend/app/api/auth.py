@@ -78,6 +78,21 @@ def login():
     if not email or not password:
         return jsonify({"detail": "Invalid credentials."}), 401
 
+    # Check for inactive / pending approval user
+    from app.models.user import User
+    from app.services.auth_service import verify_password
+    user_check = User.query.filter_by(email=email).first()
+    if user_check and not user_check.is_active:
+        if verify_password(user_check.password_hash, password or ""):
+            return (
+                jsonify(
+                    {
+                        "detail": "Status: PENDING APPROVAL — Your HR account is awaiting verification by the System Administrator under User Management."
+                    }
+                ),
+                403,
+            )
+
     # 1. Attempt database authentication
     db_user = authenticate_user(db.session, email, password)
     if db_user is not None:
@@ -216,10 +231,11 @@ def refresh():
 
 @auth_bp.post("/auth/register")
 def register():
-    """Registers a new user; default role is always EMPLOYEE."""
+    """Registers a new user with persona and approval-workflow awareness."""
     data = request.get_json(silent=True) or {}
     email = str(data.get("email", "") or "").strip().lower()
     full_name = str(data.get("full_name", data.get("name", "")) or "").strip()
+    role = str(data.get("role", "EMPLOYEE") or "EMPLOYEE").strip().upper()
     password = data.get("password")
 
     if not password:
@@ -229,15 +245,26 @@ def register():
     if not full_name:
         return jsonify({"detail": "Full name is required."}), 400
 
+    from app.models.user import ROLES, User
+    if role not in ROLES or role == "ADMIN":
+        role = "EMPLOYEE"
+
     # Ensure tables exist
     try:
         db.create_all()
     except Exception:
         pass
 
-    # Check if in DEFAULT_USERS
+    # Check if in DEFAULT_USERS or DB
     if email in DEFAULT_USERS:
         return jsonify({"detail": "Email already registered."}), 400
+    existing = User.query.filter_by(email=email).first()
+    if existing:
+        return jsonify({"detail": "Email already registered."}), 400
+
+    # HR roles start in pending approval status (is_active = False)
+    is_hr = role in ("HR_MANAGER", "HR_PAYROLL_MANAGER", "HR_PAYROLL_USER")
+    is_active = not is_hr
 
     try:
         user = create_user(
@@ -245,10 +272,22 @@ def register():
             email=email,
             password=str(password),
             full_name=full_name,
-            role="EMPLOYEE",
-            is_active=True,
+            role=role,
+            is_active=is_active,
         )
         db.session.commit()
+
+        if not is_active:
+            return (
+                jsonify(
+                    {
+                        "user": user.to_dict(),
+                        "status": "PENDING_APPROVAL",
+                        "detail": "Your HR account has been registered and is awaiting verification by the System Administrator.",
+                    }
+                ),
+                201,
+            )
 
         return (
             jsonify(

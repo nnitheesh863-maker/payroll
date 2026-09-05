@@ -94,4 +94,15 @@ export const timeOffApi = {
     const res = await api.post(`/time-off/requests/${id}/refuse`);
     return res.data;
   },
+  simulatePayrollLop: async (data: {
+    employee_name?: string;
+    monthly_salary?: number;
+    leave_type?: string;
+    leave_days?: number;
+    allocated_days?: number;
+    used_days?: number;
+  }): Promise<any> => {
+    const res = await api.post('/time-off/simulate-payroll-lop', data);
+    return res.data;
+  },
 };

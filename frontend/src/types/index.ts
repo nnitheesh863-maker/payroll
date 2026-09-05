@@ -219,7 +219,9 @@ export interface DashboardMetrics {
     today_late: number;
     pending_leave_requests: number;
     pending_payruns: number;
+    pending_registrations_count?: number;
   };
+  pending_users?: User[];
   salary_trends: Array<{
     month: string;
     gross_payroll: number;
