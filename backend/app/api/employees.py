@@ -4,6 +4,7 @@ Flow 1: Employee Directory & Details with smart button metrics
 """
 
 from flask import Blueprint, request, jsonify
+from app.extensions import db
 
 employees_bp = Blueprint("employees", __name__, url_prefix="/api")
 
@@ -135,3 +136,57 @@ def update_employee(emp_id):
             e.update(data)
             return jsonify(e), 200
     return jsonify({"detail": "Employee not found"}), 404
+
+# ─── EMPLOYEE SUB-RESOURCES ──────────────────────────────────────────────────
+
+@employees_bp.get("/employees/<int:emp_id>/contracts")
+def get_employee_contracts(emp_id):
+    """Returns contracts for a specific employee."""
+    try:
+        from app.api.core_hr import CONTRACTS
+        matching = [c for c in CONTRACTS if c.get("employee_id") == emp_id]
+        return jsonify(matching), 200
+    except Exception:
+        return jsonify([]), 200
+
+@employees_bp.get("/employees/<int:emp_id>/attendances")
+def get_employee_attendances(emp_id):
+    """Returns attendance records for a specific employee."""
+    try:
+        from app.api.core_hr import ATTENDANCES
+        matching = [a for a in ATTENDANCES if a.get("employee_id") == emp_id]
+        return jsonify(matching), 200
+    except Exception:
+        return jsonify([]), 200
+
+@employees_bp.get("/employees/<int:emp_id>/payslips")
+def get_employee_payslips(emp_id):
+    """Returns payslips for a specific employee."""
+    matching = [
+        {
+            "id": 101,
+            "payrun_id": 1,
+            "employee_id": emp_id,
+            "employee_name": "Aarav Mehta" if emp_id == 1 else "Sara Khan" if emp_id == 2 else "Anil Patel",
+            "payslip_number": f"PS-2026-{100 + emp_id}",
+            "period_start": "2026-09-01",
+            "period_end": "2026-09-30",
+            "basic_salary": 65000 if emp_id == 1 else 55000,
+            "gross_salary": 105000 if emp_id == 1 else 90000,
+            "total_deductions": 14700 if emp_id == 1 else 12600,
+            "net_salary": 90300 if emp_id == 1 else 77400,
+            "status": "VALIDATED",
+            "worked_days": 30,
+        }
+    ]
+    return jsonify(matching), 200
+
+@employees_bp.get("/employees/<int:emp_id>/time-off")
+def get_employee_time_off(emp_id):
+    """Returns leave requests for a specific employee."""
+    try:
+        from app.api.time_off import TIME_OFF_REQUESTS
+        matching = [t for t in TIME_OFF_REQUESTS if t.get("employee_id") == emp_id]
+        return jsonify(matching), 200
+    except Exception:
+        return jsonify([]), 200
