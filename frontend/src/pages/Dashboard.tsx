@@ -11,6 +11,14 @@ import {
   Clock,
   PlusCircle,
   CheckCircle2,
+  Shield,
+  ShieldAlert,
+  Sparkles,
+  KeyRound,
+  Check,
+  X,
+  Layers,
+  FileCheck,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -25,30 +33,114 @@ import {
   Legend,
 } from 'recharts';
 import { dashboardApi } from '../services/dashboard.api';
-import { DashboardMetrics } from '../types';
+import { DashboardMetrics, Role } from '../types';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
+import { useAuth } from '../hooks/useAuth';
 import { usePermission } from '../hooks/usePermission';
 
 export const Dashboard: React.FC = () => {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { user, canCreatePayrun, canApproveLeaves } = usePermission();
+  const [isSwitchingRole, setIsSwitchingRole] = useState(false);
+  const { user, quickLoginAsRole } = useAuth();
+  const {
+    isEmployee,
+    isHRManager,
+    isPayrollUser,
+    isPayrollManager,
+    isAdmin,
+    canCreatePayrun,
+    canValidatePayrun,
+    canApproveLeaves,
+    canManageEmployees,
+    canManageUsers,
+  } = usePermission();
+
+  const fetchDashboard = async () => {
+    try {
+      const data = await dashboardApi.getMetrics();
+      setMetrics(data);
+    } catch (err) {
+      console.error('Failed to load dashboard metrics:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const data = await dashboardApi.getMetrics();
-        setMetrics(data);
-      } catch (err) {
-        console.error('Failed to load dashboard metrics:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchDashboard();
-  }, []);
+  }, [user]);
+
+  const handleRoleSwitch = async (role: Role) => {
+    if (user?.role === role) return;
+    setIsSwitchingRole(true);
+    try {
+      await quickLoginAsRole(role);
+      await fetchDashboard();
+    } catch (err) {
+      console.error('Role switch failed:', err);
+    } finally {
+      setIsSwitchingRole(false);
+    }
+  };
+
+  const roleConfigs: {
+    role: Role;
+    title: string;
+    person: string;
+    desc: string;
+    color: string;
+    activeBorder: string;
+    badge: string;
+  }[] = [
+    {
+      role: 'ADMIN',
+      title: 'Administrator',
+      person: 'Nitheesh Kumar',
+      desc: 'Universal permissions, user credential management, all modules',
+      color: 'hover:border-purple-300 hover:bg-purple-50/50',
+      activeBorder: 'border-purple-600 bg-purple-50/80 ring-2 ring-purple-600/30',
+      badge: 'bg-purple-600 text-white',
+    },
+    {
+      role: 'HR_MANAGER',
+      title: 'HR Manager',
+      person: 'Sarah Jenkins',
+      desc: 'Employee directory 360°, contract setup, leave request approvals',
+      color: 'hover:border-blue-300 hover:bg-blue-50/50',
+      activeBorder: 'border-blue-600 bg-blue-50/80 ring-2 ring-blue-600/30',
+      badge: 'bg-blue-600 text-white',
+    },
+    {
+      role: 'HR_PAYROLL_MANAGER',
+      title: 'Payroll Manager',
+      person: 'David Chen',
+      desc: 'Validate payruns, approve calculations, disburse salaries & send PDFs',
+      color: 'hover:border-emerald-300 hover:bg-emerald-50/50',
+      activeBorder: 'border-emerald-600 bg-emerald-50/80 ring-2 ring-emerald-600/30',
+      badge: 'bg-emerald-600 text-white',
+    },
+    {
+      role: 'HR_PAYROLL_USER',
+      title: 'Payroll Specialist',
+      person: 'Priya Sharma',
+      desc: 'Configure salary rules, create payruns, trigger computation engine',
+      color: 'hover:border-amber-300 hover:bg-amber-50/50',
+      activeBorder: 'border-amber-600 bg-amber-50/80 ring-2 ring-amber-600/30',
+      badge: 'bg-amber-600 text-white',
+    },
+    {
+      role: 'EMPLOYEE',
+      title: 'Staff Employee',
+      person: 'Rahul Verma',
+      desc: 'Punch attendance, apply for leaves, view & download own payslips',
+      color: 'hover:border-slate-300 hover:bg-slate-50/50',
+      activeBorder: 'border-slate-700 bg-slate-100 ring-2 ring-slate-700/30',
+      badge: 'bg-slate-700 text-white',
+    },
+  ];
 
   if (isLoading) {
     return <LoadingSpinner text="Loading PeoplePay360 dashboard..." />;
@@ -93,29 +185,94 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Welcome Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-soft">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">
-            Welcome back, {user?.full_name}! 👋
-          </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Logged in as <span className="font-semibold text-primary-600">{user?.role?.replace(/_/g, ' ')}</span> &bull; PeoplePay360 HR &amp; Payroll Workspace
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {canCreatePayrun && (
-            <Link to="/payroll">
-              <Button size="sm" variant="primary" icon={<PlusCircle className="h-4 w-4" />}>
-                Create Payrun
-              </Button>
-            </Link>
+      {/* 🌟 Prominent Interactive Role Switcher Banner */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-soft">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary-600" />
+              <h2 className="text-base font-bold text-slate-900">
+                Live Role-Based Access Control (RBAC) Switcher
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Click any role below to instantly switch JWT permissions and test adaptive module access in real-time
+            </p>
+          </div>
+          {isSwitchingRole && (
+            <span className="text-xs font-semibold text-primary-600 flex items-center gap-1.5 animate-pulse">
+              <span className="h-2 w-2 rounded-full bg-primary-600" /> Switching Role Persona...
+            </span>
           )}
-          <Link to="/time-off">
-            <Button size="sm" variant="outline">
-              Apply Leave
-            </Button>
-          </Link>
+        </div>
+
+        {/* 5 Interactive Role Persona Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {roleConfigs.map((rc) => {
+            const isActive = user?.role === rc.role;
+            return (
+              <button
+                key={rc.role}
+                onClick={() => handleRoleSwitch(rc.role)}
+                disabled={isSwitchingRole}
+                className={`p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer relative flex flex-col justify-between ${
+                  isActive
+                    ? rc.activeBorder
+                    : `bg-white border-slate-200 ${rc.color} shadow-xs`
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-bold text-xs text-slate-900">{rc.title}</span>
+                    {isActive ? (
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${rc.badge}`}>
+                        Active
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-slate-400 font-medium">Click to Test</span>
+                    )}
+                  </div>
+                  <p className="text-xs font-semibold text-slate-700">{rc.person}</p>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-snug line-clamp-2">
+                    {rc.desc}
+                  </p>
+                </div>
+
+                <div className="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between text-[10px]">
+                  <span className="font-mono text-slate-400">{rc.role}</span>
+                  {isActive && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Current Role Capabilities Summary Strip */}
+        <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs bg-slate-50 p-3 rounded-xl border border-slate-200/60">
+          <div className="flex items-center gap-2">
+            <Shield className="h-4 w-4 text-primary-600 shrink-0" />
+            <span className="font-semibold text-slate-800">
+              Active Persona: <span className="text-primary-600">{user?.full_name}</span> ({user?.role?.replace(/_/g, ' ')})
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 text-[11px]">
+            <span className={`inline-flex items-center gap-1 font-medium ${canManageEmployees ? 'text-emerald-700' : 'text-slate-400 line-through'}`}>
+              {canManageEmployees ? <Check className="h-3 w-3 text-emerald-600" /> : <X className="h-3 w-3 text-slate-400" />} Employee Hub
+            </span>
+            <span className={`inline-flex items-center gap-1 font-medium ${canApproveLeaves ? 'text-emerald-700' : 'text-slate-400 line-through'}`}>
+              {canApproveLeaves ? <Check className="h-3 w-3 text-emerald-600" /> : <X className="h-3 w-3 text-slate-400" />} Approve Leaves
+            </span>
+            <span className={`inline-flex items-center gap-1 font-medium ${canCreatePayrun ? 'text-emerald-700' : 'text-slate-400 line-through'}`}>
+              {canCreatePayrun ? <Check className="h-3 w-3 text-emerald-600" /> : <X className="h-3 w-3 text-slate-400" />} Compute Payroll
+            </span>
+            <span className={`inline-flex items-center gap-1 font-medium ${canValidatePayrun ? 'text-emerald-700' : 'text-slate-400 line-through'}`}>
+              {canValidatePayrun ? <Check className="h-3 w-3 text-emerald-600" /> : <X className="h-3 w-3 text-slate-400" />} Validate Payruns
+            </span>
+            <span className={`inline-flex items-center gap-1 font-medium ${canManageUsers ? 'text-emerald-700' : 'text-slate-400 line-through'}`}>
+              {canManageUsers ? <Check className="h-3 w-3 text-emerald-600" /> : <X className="h-3 w-3 text-slate-400" />} User Management
+            </span>
+          </div>
         </div>
       </div>
 
