@@ -26,8 +26,10 @@ def create_app() -> Flask:
 
     # ── Blueprints ─────────────────────────────────────────────────
     from app.api.health import health_bp
+    from app.api.auth import auth_bp
 
     app.register_blueprint(health_bp, url_prefix=settings.API_PREFIX)
+    app.register_blueprint(auth_bp, url_prefix=settings.API_PREFIX)
 
     # ── Root endpoint — confirms the service is online ─────────────
     @app.get("/")
