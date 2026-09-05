@@ -20,9 +20,13 @@ export const PayslipList: React.FC = () => {
     setIsLoading(true);
     try {
       const data = await payslipApi.list();
-      setPayslips(data);
-    } catch (err) {
-      console.error('Failed to load payslips:', err);
+      setPayslips(data || []);
+    } catch (err: any) {
+      if (err?.response?.status === 403) {
+        setPayslips([]);
+      } else {
+        console.error('Failed to load payslips:', err);
+      }
     } finally {
       setIsLoading(false);
     }

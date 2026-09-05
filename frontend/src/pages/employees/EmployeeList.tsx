@@ -148,13 +148,12 @@ export const EmployeeList: React.FC = () => {
     try {
       const data = await employeeApi.list();
       if (data && data.length > 0) {
-        const mergedMap = new Map<string, Employee>();
-        WIREFRAME_EMPLOYEES.forEach((emp) => mergedMap.set(emp.email, emp));
-        data.forEach((emp) => mergedMap.set(emp.email, emp));
-        setEmployees(Array.from(mergedMap.values()));
+        setEmployees(data);
+      } else {
+        setEmployees(WIREFRAME_EMPLOYEES);
       }
     } catch {
-      // Using default wireframe employees
+      setEmployees(WIREFRAME_EMPLOYEES);
     } finally {
       setIsLoading(false);
     }
@@ -436,13 +435,13 @@ export const EmployeeList: React.FC = () => {
       ) : viewMode === 'kanban' ? (
         /* KANBAN CARD GRID VIEW — Light, High-Contrast Sandalwood Theme with Glowing Icons & Badges */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {filteredEmployees.map((emp) => {
+          {filteredEmployees.map((emp, idx) => {
             const conf = getDeptConfig(emp.department);
             const DeptIcon = conf.icon;
 
             return (
               <div
-                key={emp.id}
+                key={`${emp.id ?? ''}_${emp.emp_code ?? ''}_${emp.email ?? ''}_${idx}`}
                 onClick={() => navigate(`/employees/${emp.id}`)}
                 className={`group bg-white hover:bg-[#FAF7F2]/80 p-5 rounded-3xl border border-[#EADBCE] shadow-xs hover:shadow-xl ${conf.borderHover} transition-all duration-300 cursor-pointer flex flex-col justify-between min-h-[190px] relative overflow-hidden`}
               >
