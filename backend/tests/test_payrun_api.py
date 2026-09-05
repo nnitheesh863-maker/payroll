@@ -291,12 +291,19 @@ def test_api_payslip_list_and_detail(client):
     assert testing_client.get("/api/payslips/00000000-0000-0000-0000-000000000000").status_code == 404
 
 
-# ── SEND (Phase 7.3 — explicit 501) ──────────────────────────────
-def test_api_send_payslips_not_implemented(client):
+# ── SEND (Phase 7.3 — mocked transport) ───────────────────────────
+def test_api_send_payslips_delivers_with_mocked_smtp(client):
+    from unittest import mock
+
     testing_client, ids = client
     created = _create_payrun(testing_client, ids).get_json()
-    response = testing_client.post(f"/api/payruns/{created['id']}/send-payslips")
-    assert response.status_code == 501
+    testing_client.post(f"/api/payruns/{created['id']}/compute")
+    with mock.patch("smtplib.SMTP"):
+        response = testing_client.post(
+            f"/api/payruns/{created['id']}/send-payslips"
+        )
+    assert response.status_code == 200
+    assert response.get_json()["sent"] == 1
     assert (
         testing_client.post(
             "/api/payruns/00000000-0000-0000-0000-000000000000/send-payslips"

@@ -11,8 +11,8 @@ Notes:
   contract; the database/service truth remains lowercase (CHECK).
 - Monetary values are serialized as JSON numbers (floats); the database
   stores exact Numeric(12, 2) and Phase 5 computes with Decimal.
-- ``POST /payruns/<id>/send-payslips`` is Phase 7.3 email delivery and
-  intentionally returns 501 here instead of fake behavior.
+- ``POST /payruns/<id>/send-payslips`` delivers persisted payslip PDFs
+  by email (Phase 7.3).
 """
 
 from datetime import date
@@ -364,11 +364,37 @@ def remove_payrun_employee_route(payrun_id, employee_id):
 
 @payroll_bp.post("/payruns/<payrun_id>/send-payslips")
 def send_payslips(payrun_id):
-    """Phase 7.3 email delivery — not implemented in Phase 6."""
-    payrun = _lookup_payrun(payrun_id)
-    if payrun is None:
+    """Phase 7.3 bulk email delivery of persisted payslip PDFs."""
+    from app.services.email_service import send_payslips_for_payrun
+    from app.services.payrun_service import (
+        PayrunValidationError as PayrunMissing,
+    )
+
+    try:
+        result = send_payslips_for_payrun(db.session, payrun_id)
+    except PayrunMissing:
         return _not_found("Payrun not found")
-    return jsonify({"detail": "Payslip delivery is not implemented yet."}), 501
+    return jsonify(result), 200
+
+
+# ── Dashboard (Phase 7.4 — real aggregations) ────────────────────
+
+@payroll_bp.get("/payroll/dashboard")
+def payroll_dashboard():
+    """Real payroll/HR dashboard aggregated from persisted rows."""
+    from app.services.payroll_dashboard_service import get_payroll_dashboard
+
+    try:
+        start = _parse_date(request.args.get("start_date"), "start_date")
+        end = _parse_date(request.args.get("end_date"), "end_date")
+        if start is not None and end is not None and end < start:
+            raise PayrunValidationError("end_date cannot precede start_date.")
+        payload = get_payroll_dashboard(
+            db.session, start_date=start, end_date=end
+        )
+    except PayrunValidationError as err:
+        return jsonify({"detail": str(err)}), 400
+    return jsonify(payload), 200
 
 
 # ── Payslips ─────────────────────────────────────────────────────
@@ -407,3 +433,29 @@ def get_payslip(payslip_id):
     if payslip is None:
         return _not_found("Payslip not found")
     return jsonify(_payslip_to_dict(payslip, include_lines=True)), 200
+
+
+@payroll_bp.get("/payslips/<payslip_id>/pdf")
+def get_payslip_pdf(payslip_id):
+    """Download the persisted payslip as a PDF (presentation only)."""
+    from flask import Response
+
+    from app.models.payslip import Payslip
+    from app.services.payslip_pdf_service import (
+        PayslipPdfError,
+        generate_payslip_pdf,
+        payslip_filename,
+    )
+
+    try:
+        pdf_bytes = generate_payslip_pdf(db.session, payslip_id)
+    except PayslipPdfError:
+        return _not_found("Payslip not found")
+    # Identity map: no extra query; needed only for the filename.
+    payslip = db.session.get(Payslip, uuid.UUID(str(payslip_id)))
+    filename = payslip_filename(payslip)
+    return Response(
+        pdf_bytes,
+        mimetype="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
