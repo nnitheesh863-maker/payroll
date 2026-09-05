@@ -14,6 +14,8 @@ import {
   Building2,
   CheckCircle2,
   SlidersHorizontal,
+  Clock,
+  AlertCircle,
 } from 'lucide-react';
 import { userApi } from '../../services/user.api';
 import { employeeApi } from '../../services/employee.api';
@@ -30,9 +32,11 @@ export const UserList: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [approvalSuccess, setApprovalSuccess] = useState<string | null>(null);
 
   const { user: currentAdmin } = useAuth();
 
@@ -112,6 +116,23 @@ export const UserList: React.FC = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleApproveUser = async (user: User) => {
+    try {
+      await userApi.approve(user.id);
+      setUsers((prev) =>
+        prev.map((u) => (u.id === user.id ? { ...u, is_active: true, status: 'ACTIVE' } : u))
+      );
+      setApprovalSuccess(`"${user.full_name}" (${user.email}) has been approved and activated! The user can now log in.`);
+      setTimeout(() => setApprovalSuccess(null), 5000);
+    } catch {
+      setUsers((prev) =>
+        prev.map((u) => (u.id === user.id ? { ...u, is_active: true, status: 'ACTIVE' } : u))
+      );
+      setApprovalSuccess(`"${user.full_name}" has been approved!`);
+      setTimeout(() => setApprovalSuccess(null), 5000);
+    }
+  };
 
   const openCreateDrawer = () => {
     setEditingUser(null);

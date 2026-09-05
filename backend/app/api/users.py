@@ -34,14 +34,27 @@ def _lookup_user(user_id):
 
     try:
         uid = uuid.UUID(str(user_id))
-        return db.session.get(User, uid)
+        db_user = db.session.get(User, uid)
+        if db_user:
+            return db_user
     except (ValueError, AttributeError, TypeError):
+        pass
+
+    try:
+        db_user = (
+            db.session.query(User)
+            .filter((User.id == str(user_id)) | (User.email == str(user_id).lower()))
+            .first()
+        )
+        if db_user:
+            return db_user
+    except Exception:
         pass
 
     from app.api.auth import DEFAULT_USERS
 
     for u in DEFAULT_USERS.values():
-        if str(u.get("id")) == str(user_id) or u.get("email") == str(user_id):
+        if str(u.get("id")) == str(user_id) or str(u.get("email", "")).lower() == str(user_id).lower():
             return u
     return None
 
@@ -52,22 +65,48 @@ def list_users():
     from app.api.auth import DEFAULT_USERS
 
     role = request.args.get("role")
+    status_filter = request.args.get("status")
+
+    users_by_email = {}
+
+    # 1. Load from DB
     try:
         from app.models.user import User
 
-        query = User.query.order_by(User.email)
-        if role:
+        query = User.query.order_by(User.created_at.desc())
+        if role and role != "ALL":
             query = query.filter(User.role == role.strip().upper())
-        db_users = [u.to_dict() for u in query.all()]
-        if db_users:
-            return jsonify(db_users), 200
+        for u in query.all():
+            users_by_email[u.email.lower()] = u.to_dict()
     except Exception:
         pass
 
-    # Fallback to in-memory personas
-    items = list(DEFAULT_USERS.values())
-    if role:
-        items = [u for u in items if u.get("role", "").upper() == role.strip().upper()]
+    # 2. Merge in-memory personas and registered users
+    for email, u in DEFAULT_USERS.items():
+        email_clean = email.lower()
+        if email_clean not in users_by_email:
+            if not role or role == "ALL" or u.get("role", "").upper() == role.strip().upper():
+                users_by_email[email_clean] = {
+                    "id": u.get("id"),
+                    "email": u.get("email"),
+                    "full_name": u.get("full_name"),
+                    "role": u.get("role"),
+                    "employee_id": u.get("employee_id"),
+                    "is_active": u.get("is_active", True),
+                    "status": "PENDING" if not u.get("is_active", True) else "ACTIVE",
+                    "created_at": u.get("created_at"),
+                }
+        else:
+            if "is_active" in u:
+                users_by_email[email_clean]["is_active"] = u["is_active"]
+                users_by_email[email_clean]["status"] = "PENDING" if not u["is_active"] else "ACTIVE"
+
+    items = list(users_by_email.values())
+    if status_filter == "pending":
+        items = [u for u in items if not u.get("is_active", True)]
+    elif status_filter == "active":
+        items = [u for u in items if u.get("is_active", True)]
+
     return jsonify(items), 200
 
 
@@ -106,7 +145,7 @@ def create_user_route():
 @users_bp.put("/users/<user_id>")
 @_MANAGE
 def update_user(user_id):
-    from app.models.user import ROLES, User
+    from app.api.auth import DEFAULT_USERS
 
     user = _lookup_user(user_id)
     if user is None:
@@ -115,6 +154,9 @@ def update_user(user_id):
     try:
         if isinstance(user, dict):
             user.update(data)
+            email = user.get("email", "").lower()
+            if email in DEFAULT_USERS:
+                DEFAULT_USERS[email].update(user)
             return jsonify(user), 200
 
         if "email" in data:
@@ -127,7 +169,95 @@ def update_user(user_id):
         if "is_active" in data:
             user.is_active = bool(data.get("is_active"))
         db.session.commit()
+        email = user.email.lower()
+        if email in DEFAULT_USERS:
+            DEFAULT_USERS[email]["is_active"] = user.is_active
+            if "role" in data:
+                DEFAULT_USERS[email]["role"] = user.role
+            if "full_name" in data:
+                DEFAULT_USERS[email]["full_name"] = user.full_name
         return jsonify(user.to_dict()), 200
+    except Exception as err:
+        db.session.rollback()
+        return jsonify({"detail": str(err)}), 400
+
+
+@users_bp.patch("/users/<user_id>/status")
+@_MANAGE
+def update_user_status(user_id):
+    """Admin endpoint to toggle user activation status."""
+    from app.api.auth import DEFAULT_USERS
+
+    data = request.get_json(silent=True) or {}
+    is_active = bool(data.get("is_active", True))
+
+    user = _lookup_user(user_id)
+    if user is None:
+        return _not_found()
+
+    try:
+        if isinstance(user, dict):
+            user["is_active"] = is_active
+            email = user.get("email", "").lower()
+            if email in DEFAULT_USERS:
+                DEFAULT_USERS[email]["is_active"] = is_active
+            return jsonify(user), 200
+
+        user.is_active = is_active
+        db.session.commit()
+        email = user.email.lower()
+        if email in DEFAULT_USERS:
+            DEFAULT_USERS[email]["is_active"] = is_active
+        return jsonify(user.to_dict()), 200
+    except Exception as err:
+        db.session.rollback()
+        return jsonify({"detail": str(err)}), 400
+
+
+@users_bp.patch("/users/<user_id>/approve")
+@users_bp.post("/users/<user_id>/approve")
+@_MANAGE
+def approve_user(user_id):
+    """Admin endpoint to approve and activate a pending HR / user account."""
+    from app.api.auth import DEFAULT_USERS
+
+    user = _lookup_user(user_id)
+    if user is None:
+        return _not_found()
+
+    try:
+        if isinstance(user, dict):
+            user["is_active"] = True
+            user["status"] = "ACTIVE"
+            email = user.get("email", "").lower()
+            if email in DEFAULT_USERS:
+                DEFAULT_USERS[email]["is_active"] = True
+                DEFAULT_USERS[email]["status"] = "ACTIVE"
+            return (
+                jsonify(
+                    {
+                        "message": "User registration approved and activated successfully.",
+                        "user": user,
+                    }
+                ),
+                200,
+            )
+
+        user.is_active = True
+        db.session.commit()
+        email = user.email.lower()
+        if email in DEFAULT_USERS:
+            DEFAULT_USERS[email]["is_active"] = True
+            DEFAULT_USERS[email]["status"] = "ACTIVE"
+        return (
+            jsonify(
+                {
+                    "message": "User registration approved and activated successfully.",
+                    "user": user.to_dict(),
+                }
+            ),
+            200,
+        )
     except Exception as err:
         db.session.rollback()
         return jsonify({"detail": str(err)}), 400
@@ -136,6 +266,8 @@ def update_user(user_id):
 @users_bp.delete("/users/<user_id>")
 @_MANAGE
 def delete_user(user_id):
+    from app.api.auth import DEFAULT_USERS
+
     user = _lookup_user(user_id)
     if user is None:
         return _not_found()
@@ -143,6 +275,9 @@ def delete_user(user_id):
         if hasattr(user, "id"):
             db.session.delete(user)
             db.session.commit()
+        email = getattr(user, "email", "") or (user.get("email") if isinstance(user, dict) else "")
+        if email and email.lower() in DEFAULT_USERS:
+            del DEFAULT_USERS[email.lower()]
     except Exception:
         pass
     return jsonify({"detail": "User deleted."}), 200

@@ -82,23 +82,28 @@ def login():
     if not email or not password:
         return jsonify({"detail": "Email and password are required."}), 400
 
-    # 1. Check in-memory enterprise personas
+    # 1. Check in-memory enterprise personas & registered users
     user = DEFAULT_USERS.get(email)
+    password_valid = False
 
-    # 2. Check database user if DB is reachable
-    if not user:
+    if user:
+        if user.get("password") == password:
+            password_valid = True
+    else:
+        # 2. Check database user if DB is reachable
         try:
             from app.models.user import User
 
             db_user = db.session.query(User).filter_by(email=email).first()
-            if db_user and db_user.is_active:
+            if db_user:
                 if verify_password(db_user.password_hash, password):
+                    password_valid = True
                     user = db_user.to_dict()
                     user["password"] = password
         except Exception:
             pass
 
-    # 3. Reject unregistered users
+    # 3. Reject unregistered accounts
     if not user:
         return (
             jsonify(
@@ -109,22 +114,23 @@ def login():
             401,
         )
 
-    # 4. Check if account is active
+    # 4. Verify password
+    if not password_valid:
+        return (
+            jsonify({"detail": "Invalid credentials. Incorrect password entered."}),
+            401,
+        )
+
+    # 5. Check if account is active / approved
     if not user.get("is_active", True):
         return (
             jsonify(
                 {
-                    "detail": "This account has been deactivated. Please contact your system administrator."
+                    "detail": "Your registration is pending approval by the System Administrator. Please wait for an Admin to approve your account before logging in.",
+                    "status": "PENDING",
                 }
             ),
             403,
-        )
-
-    # 5. Verify password
-    if user.get("password") != password:
-        return (
-            jsonify({"detail": "Invalid credentials. Incorrect password entered."}),
-            401,
         )
 
     access_token = create_access_token(user)
@@ -238,12 +244,12 @@ def refresh():
 
 @auth_bp.post("/auth/register")
 def register():
-    """Registers a new user with standard JWT token issuance."""
+    """Registers a new user; all non-admin/new registrations are set to PENDING approval."""
     data = request.get_json(silent=True) or {}
     email = str(data.get("email", "") or "").strip().lower()
     full_name = str(data.get("full_name", data.get("name", "New User")) or "").strip()
     password = str(data.get("password", "Pass@123") or "").strip()
-    role = str(data.get("role", "HR_MANAGER") or "HR_MANAGER")
+    role = str(data.get("role", "HR_MANAGER") or "HR_MANAGER").strip().upper()
 
     if not email:
         return jsonify({"detail": "Email is required for registration."}), 400
@@ -258,11 +264,15 @@ def register():
             409,
         )
 
+    # All self-registered HR/user accounts require Admin approval before login
+    is_active = False
+
     # Attempt database registration if available
+    user_id = int(datetime.now(timezone.utc).timestamp())
     try:
         from app.services.auth_service import create_user
 
-        create_user(
+        db_user = create_user(
             db.session,
             email=email,
             password=password,
@@ -276,39 +286,40 @@ def register():
                 "HR_PAYROLL_USER",
                 "EMPLOYEE",
             ]
-            else "EMPLOYEE",
+            else "HR_MANAGER",
+            is_active=is_active,
         )
         db.session.commit()
+        if db_user and hasattr(db_user, "id"):
+            user_id = str(db_user.id)
     except Exception:
         if hasattr(db, "session"):
             db.session.rollback()
 
     user = {
-        "id": int(datetime.now(timezone.utc).timestamp()),
+        "id": user_id,
         "email": email,
         "full_name": full_name,
         "role": role,
         "password": password,
-        "is_active": True,
+        "is_active": is_active,
+        "status": "PENDING",
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     DEFAULT_USERS[email] = user
 
-    access_token = create_access_token(user)
-    refresh_token = create_refresh_token(user)
-
     return (
         jsonify(
             {
-                "access_token": access_token,
-                "refresh_token": refresh_token,
-                "token_type": "bearer",
+                "status": "PENDING",
+                "message": "Registration submitted successfully. Your HR account is pending approval by the System Administrator. You can log in once an Admin approves your account.",
                 "user": {
                     "id": user["id"],
                     "email": user["email"],
                     "full_name": user["full_name"],
                     "role": user["role"],
-                    "is_active": user["is_active"],
+                    "is_active": False,
+                    "status": "PENDING",
                     "created_at": user["created_at"],
                 },
             }

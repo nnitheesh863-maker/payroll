@@ -69,11 +69,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(true);
     try {
       const res = await authApi.register({ full_name: name, email, role, password });
-      localStorage.setItem('peoplepay_access_token', res.access_token);
-      localStorage.setItem('peoplepay_refresh_token', res.refresh_token);
-      localStorage.setItem('peoplepay_user', JSON.stringify(res.user));
-      setToken(res.access_token);
-      setUser(res.user);
+      if (res.access_token && res.user?.is_active) {
+        localStorage.setItem('peoplepay_access_token', res.access_token);
+        localStorage.setItem('peoplepay_refresh_token', res.refresh_token);
+        localStorage.setItem('peoplepay_user', JSON.stringify(res.user));
+        setToken(res.access_token);
+        setUser(res.user);
+      }
+      return res;
     } catch (err) {
       throw err;
     } finally {
