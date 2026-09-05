@@ -374,7 +374,7 @@ export const EmployeeList: React.FC = () => {
             <div
               key={emp.id}
               onClick={() => navigate(`/employees/${emp.id}`)}
-              className="group bg-slate-900 text-white p-5 rounded-2xl border border-slate-800 shadow-xl hover:border-primary-500 hover:shadow-2xl transition-all cursor-pointer flex flex-col justify-between h-44 relative overflow-hidden"
+              className="group bg-slate-900 text-white p-5 rounded-2xl border border-slate-800 shadow-xl hover:border-primary-500 hover:shadow-2xl card-hover-effect animate-fade-scale cursor-pointer flex flex-col justify-between h-44 relative overflow-hidden"
             >
               {/* Top Row: Avatar Initials + Status Dot */}
               <div className="flex items-start justify-between">

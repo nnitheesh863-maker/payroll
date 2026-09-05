@@ -139,7 +139,7 @@ export const EmployeeDetails: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-scale">
       {/* Top Header Breadcrumb & Subtitle */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
         <div>

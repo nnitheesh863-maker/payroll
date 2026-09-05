@@ -47,6 +47,12 @@ export const Sidebar: React.FC = () => {
       show: true,
     },
     {
+      label: 'Working Schedules',
+      path: '/schedules',
+      icon: CalendarOff,
+      show: true,
+    },
+    {
       label: 'Time Off & Leaves',
       path: '/time-off',
       icon: CalendarOff,

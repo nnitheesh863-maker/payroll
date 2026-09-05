@@ -128,20 +128,49 @@ export const HRNavbar: React.FC = () => {
           )}
         </div>
 
-        {/* 3. Attendance Link */}
-        <NavLink
-          to="/attendance"
-          className={({ isActive }) =>
-            `flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              isActive
+        {/* 3. Attendance & Schedules Dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => toggleDropdown('attendance')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              isAttActive || location.pathname.startsWith('/schedules')
                 ? 'bg-primary-600 text-white shadow-xs'
                 : 'text-slate-300 hover:text-white hover:bg-slate-800'
-            }`
-          }
-        >
-          <Clock className="h-3.5 w-3.5" />
-          <span>Attendance</span>
-        </NavLink>
+            }`}
+          >
+            <Clock className="h-3.5 w-3.5" />
+            <span>Attendance</span>
+            <ChevronDown className="h-3 w-3 opacity-70" />
+          </button>
+
+          {activeDropdown === 'attendance' && (
+            <>
+              <div className="fixed inset-0 z-30" onClick={closeDropdowns} />
+              <div className="absolute left-0 mt-2 w-56 rounded-xl bg-slate-800 border border-slate-700 shadow-2xl p-1.5 z-40 text-xs">
+                <button
+                  onClick={() => {
+                    closeDropdowns();
+                    navigate('/attendance');
+                  }}
+                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-700/70 text-slate-200 flex items-center gap-2"
+                >
+                  <Clock className="h-3.5 w-3.5 text-emerald-400" />
+                  <span>Attendance Punch Logs</span>
+                </button>
+                <button
+                  onClick={() => {
+                    closeDropdowns();
+                    navigate('/schedules');
+                  }}
+                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-700/70 text-slate-200 flex items-center gap-2"
+                >
+                  <Calendar className="h-3.5 w-3.5 text-indigo-400" />
+                  <span>Working Schedules (List &amp; Form)</span>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
 
         {/* 4. Time Off Dropdown */}
         <div className="relative">

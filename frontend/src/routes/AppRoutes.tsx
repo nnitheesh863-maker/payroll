@@ -12,6 +12,7 @@ import { EmployeeDetails } from '../pages/employees/EmployeeDetails';
 import { ContractList } from '../pages/contracts/ContractList';
 import { ContractDetails } from '../pages/contracts/ContractDetails';
 import { AttendanceList } from '../pages/attendance/AttendanceList';
+import { WorkingSchedules } from '../pages/attendance/WorkingSchedules';
 import { TimeOffPage } from '../pages/timeoff/TimeOffPage';
 import { SalaryStructures } from '../pages/salary/SalaryStructures';
 import { PayrunList } from '../pages/payroll/PayrunList';
@@ -36,8 +37,9 @@ export const AppRoutes: React.FC = () => {
           <Route path="/employees" element={<EmployeeList />} />
           <Route path="/employees/:id" element={<EmployeeDetails />} />
 
-          {/* Attendance */}
+          {/* Attendance & Schedules */}
           <Route path="/attendance" element={<AttendanceList />} />
+          <Route path="/schedules" element={<WorkingSchedules />} />
 
           {/* Time Off & Leaves */}
           <Route path="/time-off" element={<TimeOffPage />} />
