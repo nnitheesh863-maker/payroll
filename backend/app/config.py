@@ -27,5 +27,14 @@ class Settings(BaseSettings):
     # ── Database ─────────────────────────────────────────────────
     DATABASE_URL: str = "postgresql+psycopg://postgres:postgres@localhost:5432/peoplepay360"
 
+    # ── Email (Phase 7.3) ──────────────────────────────────────────
+    # Real credentials come from environment variables, never code.
+    MAIL_SERVER: str = "localhost"
+    MAIL_PORT: int = 1025
+    MAIL_USERNAME: str = ""
+    MAIL_PASSWORD: str = ""
+    MAIL_USE_TLS: bool = False
+    MAIL_DEFAULT_SENDER: str = "payroll@peoplepay360.com"
+
 
 settings = Settings()
