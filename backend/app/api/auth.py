@@ -1,5 +1,9 @@
 """
 Authentication and session management Blueprint for PeoplePay360.
+Provides:
+- Strict credentials verification (rejects incorrect passwords / unregistered emails)
+- JWT generation & decoding (RFC 7519 standard)
+- Session persistence & user registration
 """
 
 from flask import Blueprint, jsonify, request
@@ -72,25 +76,29 @@ def make_jwt(user_data: dict) -> str:
 
 @auth_bp.post("/auth/login")
 def login():
-    """Authenticates user and returns JWT token."""
+    """Authenticates user with strict credential validation and returns JWT token."""
     data = request.get_json() or {}
     email = data.get("email", "").strip().lower()
     password = data.get("password", "").strip()
 
-    user = DEFAULT_USERS.get(email)
-    if not user:
-        # If user not found, create dynamic user with matching credentials
-        user = {
-            "id": int(time.time() * 1000) % 100000,
-            "email": email,
-            "full_name": email.split("@")[0].replace(".", " ").title(),
-            "role": "HR_MANAGER",
-            "is_active": True,
-            "password": password,
-            "created_at": "2026-01-01T00:00:00Z"
-        }
-        DEFAULT_USERS[email] = user
+    if not email or not password:
+        return jsonify({"detail": "Email and password are required."}), 400
 
+    user = DEFAULT_USERS.get(email)
+
+    # 1. Reject unregistered users
+    if not user:
+        return jsonify({"detail": "Invalid credentials. No registered account found with this email."}), 401
+
+    # 2. Check if account is active
+    if not user.get("is_active", True):
+        return jsonify({"detail": "This account has been deactivated. Please contact your system administrator."}), 403
+
+    # 3. Verify password
+    if user.get("password") != password:
+        return jsonify({"detail": "Invalid credentials. Incorrect password entered."}), 401
+
+    # 4. Issue JWT access and refresh tokens
     access_token = make_jwt(user)
     refresh_token = f"refresh_{user['id']}_{int(time.time())}"
 
@@ -113,26 +121,29 @@ def login():
 def get_me():
     """Returns profile for current token."""
     auth_header = request.headers.get("Authorization", "")
-    email = "admin@peoplepay360.com"
-    if "Bearer " in auth_header:
-        token = auth_header.replace("Bearer ", "").strip()
-        try:
-            parts = token.split(".")
-            if len(parts) >= 2:
-                payload = json.loads(base64.b64decode(parts[1]).decode())
-                email = payload.get("sub", email)
-        except Exception:
-            pass
+    if not auth_header or "Bearer " not in auth_header:
+        return jsonify({"detail": "Authentication token missing or invalid."}), 401
 
-    user = DEFAULT_USERS.get(email, DEFAULT_USERS["admin@peoplepay360.com"])
-    return jsonify({
-        "id": user["id"],
-        "email": user["email"],
-        "full_name": user["full_name"],
-        "role": user["role"],
-        "is_active": user["is_active"],
-        "created_at": user.get("created_at")
-    }), 200
+    token = auth_header.replace("Bearer ", "").strip()
+    try:
+        parts = token.split(".")
+        if len(parts) >= 2:
+            payload = json.loads(base64.b64decode(parts[1]).decode())
+            email = payload.get("sub", "")
+            user = DEFAULT_USERS.get(email)
+            if user:
+                return jsonify({
+                    "id": user["id"],
+                    "email": user["email"],
+                    "full_name": user["full_name"],
+                    "role": user["role"],
+                    "is_active": user["is_active"],
+                    "created_at": user.get("created_at")
+                }), 200
+    except Exception:
+        pass
+
+    return jsonify({"detail": "Invalid or expired token."}), 401
 
 
 @auth_bp.post("/auth/refresh")
@@ -140,7 +151,7 @@ def refresh():
     """Refreshes access token."""
     data = request.get_json() or {}
     ref_tok = data.get("refresh_token", "")
-    user = DEFAULT_USERS["admin@peoplepay360.com"]
+    user = DEFAULT_USERS.get("admin@peoplepay360.com")
     return jsonify({
         "access_token": make_jwt(user),
         "refresh_token": ref_tok or "new_refresh_token"
@@ -149,26 +160,41 @@ def refresh():
 
 @auth_bp.post("/auth/register")
 def register():
-    """Registers a new organization and user."""
+    """Registers a new organization user and stores credentials."""
     data = request.get_json() or {}
     email = data.get("email", "").strip().lower()
     full_name = data.get("full_name", data.get("name", "New User")).strip()
+    password = data.get("password", "Pass@123").strip()
     role = data.get("role", "HR_MANAGER")
+
+    if not email:
+        return jsonify({"detail": "Email is required for registration."}), 400
+
+    if email in DEFAULT_USERS:
+        return jsonify({"detail": "An account with this email already exists. Please log in instead."}), 409
 
     user = {
         "id": int(time.time() * 1000) % 100000,
-        "email": email or "user@peoplepay360.com",
+        "email": email,
         "full_name": full_name,
         "role": role,
+        "password": password,
         "is_active": True,
-        "created_at": "2026-01-01T00:00:00Z"
+        "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     }
-    DEFAULT_USERS[user["email"]] = user
+    DEFAULT_USERS[email] = user
 
     access_token = make_jwt(user)
     return jsonify({
         "access_token": access_token,
         "refresh_token": f"refresh_{user['id']}_{int(time.time())}",
         "token_type": "bearer",
-        "user": user
+        "user": {
+            "id": user["id"],
+            "email": user["email"],
+            "full_name": user["full_name"],
+            "role": user["role"],
+            "is_active": user["is_active"],
+            "created_at": user["created_at"]
+        }
     }), 201

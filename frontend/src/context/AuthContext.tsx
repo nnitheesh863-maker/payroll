@@ -8,7 +8,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, role?: Role) => Promise<void>;
+  register: (name: string, email: string, role?: Role, password?: string) => Promise<void>;
   quickLoginAsRole: (role: Role) => Promise<void>;
   logout: () => void;
   hasRole: (roles: Role | Role[]) => boolean;
@@ -43,13 +43,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setUser(me);
           localStorage.setItem('peoplepay_user', JSON.stringify(me));
         } catch {
-          // If offline or token expired, keep cached user for offline demo
-          const cached = localStorage.getItem('peoplepay_user');
-          if (cached) {
-            setUser(JSON.parse(cached));
-          } else {
-            logout();
-          }
+          // Token expired or invalid
+          logout();
         }
       }
       setIsLoading(false);
@@ -66,55 +61,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.setItem('peoplepay_user', JSON.stringify(res.user));
       setToken(res.access_token);
       setUser(res.user);
-    } catch {
-      // Offline fallback: find matching demo user or create mock session
-      let matchedRole: Role = 'ADMIN';
-      let matchedName = 'Administrator';
-
-      for (const [r, cred] of Object.entries(roleCredentials)) {
-        if (cred.email.toLowerCase() === email.toLowerCase()) {
-          matchedRole = r as Role;
-          matchedName = cred.name;
-          break;
-        }
-      }
-
-      const mockUser: User = {
-        id: Math.floor(Math.random() * 100000) + 1,
-        email: email,
-        full_name: matchedName,
-        role: matchedRole,
-        is_active: true,
-        created_at: new Date().toISOString(),
-      };
-
-      const mockToken = 'mock_jwt_' + btoa(JSON.stringify(mockUser));
-      localStorage.setItem('peoplepay_access_token', mockToken);
-      localStorage.setItem('peoplepay_refresh_token', 'mock_refresh_' + Date.now());
-      localStorage.setItem('peoplepay_user', JSON.stringify(mockUser));
-      setToken(mockToken);
-      setUser(mockUser);
+    } catch (err) {
+      // Clear any previous stale session
+      localStorage.removeItem('peoplepay_access_token');
+      localStorage.removeItem('peoplepay_refresh_token');
+      localStorage.removeItem('peoplepay_user');
+      setToken(null);
+      setUser(null);
+      // Re-throw so Login form can display exact invalid credentials error
+      throw err;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const register = async (name: string, email: string, role: Role = 'HR_MANAGER') => {
+  const register = async (name: string, email: string, role: Role = 'HR_MANAGER', password = 'Pass@123') => {
     setIsLoading(true);
     try {
-      const mockUser: User = {
-        id: Math.floor(Math.random() * 100000) + 1,
-        email: email,
-        full_name: name,
-        role: role,
-        is_active: true,
-        created_at: new Date().toISOString(),
-      };
-      const mockToken = 'mock_jwt_' + btoa(JSON.stringify(mockUser));
-      localStorage.setItem('peoplepay_access_token', mockToken);
-      localStorage.setItem('peoplepay_user', JSON.stringify(mockUser));
-      setToken(mockToken);
-      setUser(mockUser);
+      const res = await authApi.register({ full_name: name, email, role, password });
+      localStorage.setItem('peoplepay_access_token', res.access_token);
+      localStorage.setItem('peoplepay_refresh_token', res.refresh_token);
+      localStorage.setItem('peoplepay_user', JSON.stringify(res.user));
+      setToken(res.access_token);
+      setUser(res.user);
+    } catch (err) {
+      throw err;
     } finally {
       setIsLoading(false);
     }
@@ -138,8 +109,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const hasRole = (roles: Role | Role[]): boolean => {
     if (!user) return false;
     if (user.role === 'ADMIN') return true;
-    const allowed = Array.isArray(roles) ? roles : [roles];
-    return allowed.includes(user.role);
+    if (Array.isArray(roles)) {
+      return roles.includes(user.role);
+    }
+    return user.role === roles;
   };
 
   return (

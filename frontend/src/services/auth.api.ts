@@ -1,9 +1,13 @@
 import { api } from './api';
-import { User } from '../types';
+import { User, Role } from '../types';
 
 export const authApi = {
   login: async (email: string, password: string) => {
     const response = await api.post('/auth/login', { email, password });
+    return response.data;
+  },
+  register: async (data: { name?: string; full_name?: string; email: string; password?: string; role?: Role }) => {
+    const response = await api.post('/auth/register', data);
     return response.data;
   },
   getMe: async (): Promise<User> => {
