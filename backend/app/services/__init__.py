@@ -1,6 +1,6 @@
 """
-Services package — domain services for schedules, contracts, attendance
-and time off.
+Services package — domain services for schedules, contracts, attendance,
+time off and salary configuration.
 """
 
 from app.services.schedule_service import (
@@ -51,6 +51,32 @@ from app.services.timeoff_service import (
     validate_no_overlapping_requests,
     validate_request_dates,
 )
+from app.services.salary_rule_service import (
+    SalaryRuleDomainError,
+    SalaryRuleValidationError,
+    activate_rule,
+    create_rule,
+    deactivate_rule,
+    get_ordered_active_rules,
+    get_ordered_rules,
+    get_rule,
+    update_rule_config,
+    validate_rule,
+    validate_rule_config,
+)
+from app.services.salary_structure_service import (
+    SalaryStructureDomainError,
+    SalaryStructureValidationError,
+    activate_structure,
+    add_rule_to_structure,
+    create_structure,
+    deactivate_structure,
+    get_structure,
+    get_structure_rules,
+    list_structures,
+    validate_structure,
+    validate_structure_config,
+)
 
 __all__ = [
     "calculate_day_working_hours",
@@ -93,4 +119,26 @@ __all__ = [
     "reject_request",
     "cancel_request",
     "get_time_off_balance",
+    "SalaryRuleDomainError",
+    "SalaryRuleValidationError",
+    "validate_rule_config",
+    "validate_rule",
+    "get_ordered_active_rules",
+    "get_ordered_rules",
+    "create_rule",
+    "update_rule_config",
+    "activate_rule",
+    "deactivate_rule",
+    "get_rule",
+    "SalaryStructureDomainError",
+    "SalaryStructureValidationError",
+    "validate_structure_config",
+    "validate_structure",
+    "create_structure",
+    "get_structure",
+    "list_structures",
+    "activate_structure",
+    "deactivate_structure",
+    "add_rule_to_structure",
+    "get_structure_rules",
 ]

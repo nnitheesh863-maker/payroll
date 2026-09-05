@@ -11,3 +11,5 @@ from app.models.attendance import Attendance  # noqa: F401
 from app.models.time_off_type import TimeOffType  # noqa: F401
 from app.models.time_off_allocation import TimeOffAllocation  # noqa: F401
 from app.models.time_off_request import TimeOffRequest  # noqa: F401
+from app.models.salary_structure import SalaryStructure  # noqa: F401
+from app.models.salary_rule import SalaryRule  # noqa: F401
