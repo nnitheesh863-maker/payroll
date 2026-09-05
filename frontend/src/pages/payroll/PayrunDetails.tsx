@@ -159,21 +159,21 @@ export const PayrunDetails: React.FC = () => {
     {
       key: 'employee',
       title: 'Employee',
-      render: (p) => (
+      render: (p: any) => (
         <div>
           <p className="font-semibold text-slate-900 text-xs">
-            {p.employee ? `${p.employee.first_name} ${p.employee.last_name}` : `EMP #${p.employee_id}`}
+            {p.employee_name || (p.employee ? `${p.employee.first_name} ${p.employee.last_name}` : `EMP #${p.employee_id}`)}
           </p>
-          <p className="font-mono text-[11px] text-slate-400">{p.payslip_number}</p>
+          <p className="font-mono text-[11px] text-slate-400">{p.payslip_number || p.employee_code || `PS-${p.id}`}</p>
         </div>
       ),
     },
     {
       key: 'working_days',
       title: 'Attendance',
-      render: (p) => (
+      render: (p: any) => (
         <span className="text-xs text-slate-600">
-          {p.attended_days} / {p.total_working_days}d {p.unpaid_leave_days > 0 && <span className="text-rose-600 font-semibold">(LOP: {p.unpaid_leave_days}d)</span>}
+          {p.attended_days ?? p.worked_days ?? 30} / {p.total_working_days ?? 30}d {(p.unpaid_leave_days ?? p.leave_days ?? 0) > 0 && <span className="text-rose-600 font-semibold">(LOP: {p.unpaid_leave_days ?? p.leave_days}d)</span>}
         </span>
       ),
     },
@@ -181,33 +181,34 @@ export const PayrunDetails: React.FC = () => {
       key: 'base_wage',
       title: 'Base Wage',
       align: 'right',
-      render: (p) => <span className="font-mono text-xs text-slate-700">₹ {p.base_wage.toLocaleString()}</span>,
+      render: (p: any) => <span className="font-mono text-xs text-slate-700">₹ {(p.base_wage ?? p.basic_salary ?? 0).toLocaleString()}</span>,
     },
     {
       key: 'gross_salary',
       title: 'Gross Salary',
       align: 'right',
-      render: (p) => <span className="font-mono font-semibold text-xs text-slate-900">₹ {p.gross_salary.toLocaleString()}</span>,
+      render: (p: any) => <span className="font-mono font-semibold text-xs text-slate-900">₹ {(p.gross_salary ?? 0).toLocaleString()}</span>,
     },
     {
       key: 'total_deductions',
       title: 'Deductions (PF/TDS/LOP)',
       align: 'right',
-      render: (p) => <span className="font-mono text-xs text-rose-600 font-semibold">₹ {p.total_deductions.toLocaleString()}</span>,
+      render: (p: any) => <span className="font-mono text-xs text-rose-600 font-semibold">₹ {(p.total_deductions ?? 0).toLocaleString()}</span>,
     },
     {
       key: 'net_salary',
       title: 'Net Salary Disbursed',
       align: 'right',
-      render: (p) => <span className="font-mono text-xs font-bold text-emerald-600">₹ {p.net_salary.toLocaleString()}</span>,
+      render: (p: any) => <span className="font-mono text-xs font-bold text-emerald-600">₹ {(p.net_salary ?? 0).toLocaleString()}</span>,
     },
     {
       key: 'action',
       title: 'Payslip PDF',
       align: 'right',
-      render: (p) => (
+      render: (p: any) => (
         <Button
           size="sm"
+
           variant="outline"
           onClick={() => payslipApi.downloadPdf(p.id, p.payslip_number)}
           icon={<Download className="h-3 w-3" />}

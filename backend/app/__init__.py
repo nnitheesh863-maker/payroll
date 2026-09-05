@@ -34,9 +34,24 @@ def create_app(config_overrides: dict | None = None) -> Flask:
     # ── Blueprints ─────────────────────────────────────────────────
     from app.api.health import health_bp
     from app.api.auth import auth_bp
+    from app.api.time_off import time_off_bp
+    from app.api.payroll import payroll_bp
+    from app.api.dashboard import dashboard_bp
+    from app.api.employees import employees_bp
+    from app.api.users import users_bp
+    from app.api.core_hr import contracts_bp, attendance_bp, salary_bp
 
     app.register_blueprint(health_bp, url_prefix=settings.API_PREFIX)
     app.register_blueprint(auth_bp, url_prefix=settings.API_PREFIX)
+    app.register_blueprint(time_off_bp)
+    app.register_blueprint(payroll_bp)
+    app.register_blueprint(dashboard_bp)
+    app.register_blueprint(employees_bp)
+    app.register_blueprint(users_bp)
+    app.register_blueprint(contracts_bp)
+    app.register_blueprint(attendance_bp)
+    app.register_blueprint(salary_bp)
+
 
     # ── Root endpoint — confirms the service is online ─────────────
     @app.get("/")

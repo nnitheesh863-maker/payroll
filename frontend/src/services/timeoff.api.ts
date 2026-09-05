@@ -1,36 +1,97 @@
 import { api } from './api';
-import { TimeOffType, TimeOffAllocation, TimeOffRequest } from '../types';
+
+export interface TimeOffTypeItem {
+  id: number;
+  name: string;
+  code: string;
+  unit: string;
+  requires_allocation: string;
+  approval: string;
+  payroll_work_entry: string;
+  display_color: string;
+  active: boolean;
+  config_notes: string;
+}
+
+export interface AllocationItem {
+  id: number;
+  employee_id: number;
+  employee_name: string;
+  time_off_type_id: number;
+  time_off_type_name: string;
+  allocated_days: number;
+  taken_days: number;
+  remaining_days: number;
+  status: 'Approved' | 'To Approve' | 'Refused';
+  approver: string;
+  validity: string;
+  description: string;
+}
+
+export interface TimeOffRequestItem {
+  id: number;
+  employee_id: number;
+  employee_name: string;
+  time_off_type_id: number;
+  time_off_type_name: string;
+  start_date: string;
+  end_date: string;
+  duration: string;
+  days_count: number;
+  status: 'Approved' | 'To Approve' | 'Refused';
+  approver: string;
+  allocation_used: string;
+  reason: string;
+}
 
 export const timeOffApi = {
-  getTypes: async (): Promise<TimeOffType[]> => {
+  // Types
+  getTypes: async (): Promise<TimeOffTypeItem[]> => {
     const res = await api.get('/time-off/types');
     return res.data;
   },
-  getAllocations: async (employee_id?: number): Promise<TimeOffAllocation[]> => {
-    const res = await api.get('/time-off/allocations', { params: { employee_id } });
+  createType: async (data: Partial<TimeOffTypeItem>): Promise<TimeOffTypeItem> => {
+    const res = await api.post('/time-off/types', data);
     return res.data;
   },
-  getRequests: async (params?: { status_filter?: string; employee_id?: number }): Promise<TimeOffRequest[]> => {
-    const res = await api.get('/time-off/requests', { params });
+  updateType: async (id: number, data: Partial<TimeOffTypeItem>): Promise<TimeOffTypeItem> => {
+    const res = await api.put(`/time-off/types/${id}`, data);
     return res.data;
   },
-  submitRequest: async (data: {
-    employee_id?: number;
-    leave_type_id: number;
-    start_date: string;
-    end_date: string;
-    days_count: number;
-    reason: string;
-  }): Promise<TimeOffRequest> => {
+
+  // Allocations
+  getAllocations: async (): Promise<AllocationItem[]> => {
+    const res = await api.get('/time-off/allocations');
+    return res.data;
+  },
+  createAllocation: async (data: Partial<AllocationItem>): Promise<AllocationItem> => {
+    const res = await api.post('/time-off/allocations', data);
+    return res.data;
+  },
+  approveAllocation: async (id: number): Promise<AllocationItem> => {
+    const res = await api.post(`/time-off/allocations/${id}/approve`);
+    return res.data;
+  },
+  refuseAllocation: async (id: number): Promise<AllocationItem> => {
+    const res = await api.post(`/time-off/allocations/${id}/refuse`);
+    return res.data;
+  },
+
+  // Requests
+  getRequests: async (): Promise<TimeOffRequestItem[]> => {
+    const res = await api.get('/time-off/requests');
+    return res.data;
+  },
+  createRequest: async (data: Partial<TimeOffRequestItem>): Promise<TimeOffRequestItem> => {
     const res = await api.post('/time-off/requests', data);
     return res.data;
   },
-  approveRequest: async (id: number): Promise<TimeOffRequest> => {
-    const res = await api.put(`/time-off/requests/${id}/approve`);
+  approveRequest: async (id: number): Promise<TimeOffRequestItem> => {
+    const res = await api.post(`/time-off/requests/${id}/approve`);
     return res.data;
   },
-  rejectRequest: async (id: number, rejection_reason?: string): Promise<TimeOffRequest> => {
-    const res = await api.put(`/time-off/requests/${id}/reject`, { status: 'REJECTED', rejection_reason });
+  refuseRequest: async (id: number): Promise<TimeOffRequestItem> => {
+    const res = await api.post(`/time-off/requests/${id}/refuse`);
     return res.data;
   },
 };
