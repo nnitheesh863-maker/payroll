@@ -47,16 +47,16 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
+    <header className="h-16 bg-white/95 backdrop-blur-md border-b border-[#EADBCE]/90 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-[0_2px_10px_rgba(120,53,15,0.02)]">
       
       {/* Search Bar */}
       <div className="flex items-center gap-3 flex-1 max-w-md">
         <div className="relative w-full">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8C532B]/60" />
           <input
             type="text"
             placeholder="Search employees, contracts, payruns..."
-            className="w-full pl-10 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-[#8C532B] focus:ring-2 focus:ring-[#8C532B]/10 transition-all font-medium"
+            className="w-full pl-10 pr-4 py-2 text-xs bg-[#FAF7F2] border border-[#EADBCE] rounded-xl text-[#381E0D] placeholder-[#A38A73] focus:outline-none focus:bg-white focus:border-[#8C532B] focus:ring-4 focus:ring-[#8C532B]/10 transition-all font-medium shadow-xs"
           />
         </div>
       </div>
@@ -67,43 +67,43 @@ export const Header: React.FC = () => {
         {/* Attendance Quick Action Widget Trigger Button */}
         <button
           onClick={() => setShowWidgetModal(true)}
-          className="flex items-center gap-2.5 bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200/80 transition-all cursor-pointer shadow-xs group"
+          className="flex items-center gap-2.5 bg-[#FAF7F2] hover:bg-[#F5ECE0] px-3.5 py-1.5 rounded-xl border border-[#EADBCE] transition-all cursor-pointer shadow-xs group"
         >
           <span
             className={`h-2.5 w-2.5 rounded-full ${
-              isCheckedIn ? 'bg-emerald-500 ring-4 ring-emerald-100 animate-pulse' : 'bg-rose-500'
+              isCheckedIn ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.9)] animate-pulse' : 'bg-rose-500'
             }`}
           />
 
-          <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-slate-700">
-            <Clock className="h-3.5 w-3.5 text-[#8C532B]" />
+          <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-[#381E0D]">
+            <Clock className="h-3.5 w-3.5 text-[#8C532B] drop-glow-sandal" />
             <span>{isCheckedIn ? formatElapsed(elapsedSeconds) : 'Clocked Out'}</span>
           </div>
 
-          <span className="text-[10px] font-bold text-slate-400 group-hover:text-slate-600">
+          <span className="text-[10px] font-bold text-[#8C532B] group-hover:text-[#381E0D]">
             {isCheckedIn ? 'Checked In' : 'Click to Punch'}
           </span>
         </button>
 
         {/* User Role Badge */}
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#FAF7F2] border border-[#EADBCE] text-xs">
-          <div className="h-5 w-5 rounded-md bg-[#8C532B] text-white flex items-center justify-center font-bold text-[10px]">
+        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#FAF7F2] border border-[#EADBCE] text-xs shadow-xs">
+          <div className="h-6 w-6 rounded-lg bg-gradient-to-tr from-[#8C532B] to-[#B87B4C] text-white flex items-center justify-center font-black text-[11px] shadow-sm shadow-[#8C532B]/30 drop-shadow-[0_0_6px_rgba(140,83,43,0.5)]">
             {user?.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
           </div>
           <div className="flex flex-col">
             <span className="font-bold text-[#381E0D] text-[11px] leading-tight">
               {user?.full_name || 'User'}
             </span>
-            <span className="text-[9px] font-bold text-[#8C532B] tracking-wider uppercase leading-none">
+            <span className="text-[9px] font-extrabold text-[#8C532B] tracking-wider uppercase leading-none">
               {user?.role?.replace(/_/g, ' ') || 'EMPLOYEE'}
             </span>
           </div>
         </div>
 
         {/* Notification Bell */}
-        <button className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors relative cursor-pointer">
+        <button className="p-2 text-[#735338] hover:text-[#381E0D] hover:bg-[#FAF7F2] rounded-xl transition-colors relative cursor-pointer border border-transparent hover:border-[#EADBCE]">
           <Bell className="h-4 w-4" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[#8C532B] ring-2 ring-white" />
+          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[#8C532B] shadow-[0_0_6px_rgba(140,83,43,0.8)] ring-2 ring-white" />
         </button>
       </div>
 

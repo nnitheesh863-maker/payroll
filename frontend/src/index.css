@@ -48,7 +48,7 @@
   border-bottom: 1px solid rgba(234, 219, 206, 0.8);
 }
 
-/* Glowing Icon Containers */
+/* Glowing Icon Containers & Halos */
 .icon-glow-sandal {
   box-shadow: 0 0 20px rgba(140, 83, 43, 0.35);
 }
@@ -56,10 +56,45 @@
   box-shadow: 0 0 20px rgba(184, 123, 76, 0.35);
 }
 .icon-glow-amber {
-  box-shadow: 0 0 20px rgba(217, 119, 6, 0.35);
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.45);
 }
 .icon-glow-emerald {
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.35);
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.45);
+}
+.icon-glow-blue {
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.45);
+}
+.icon-glow-purple {
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.45);
+}
+.icon-glow-rose {
+  box-shadow: 0 0 16px rgba(244, 63, 94, 0.45);
+}
+
+/* Neon Icon Drop Shadows */
+.drop-glow-amber {
+  filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.6));
+}
+.drop-glow-emerald {
+  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.6));
+}
+.drop-glow-blue {
+  filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.6));
+}
+.drop-glow-purple {
+  filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.6));
+}
+.drop-glow-sandal {
+  filter: drop-shadow(0 0 6px rgba(140, 83, 43, 0.6));
+}
+
+/* Glowing card interactive border on hover */
+.glow-card-hover {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glow-card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px -6px rgba(140, 83, 43, 0.12), 0 0 0 1px rgba(140, 83, 43, 0.25);
 }
 
 

@@ -240,14 +240,22 @@ export const UserList: React.FC = () => {
     EMPLOYEE: { label: 'Employee', style: 'bg-slate-100 text-slate-700 border-slate-200' },
   };
 
+  const pendingUsers = users.filter((u) => !u.is_active);
+
   // Filtered Users
   const filteredUsers = users.filter((u) => {
     const matchesSearch =
-      u.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.role.toLowerCase().includes(searchQuery.toLowerCase());
+      (u.full_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (u.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (u.role || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesRole = roleFilter === 'ALL' || u.role === roleFilter;
-    return matchesSearch && matchesRole;
+    const matchesStatus =
+      statusFilter === 'ALL'
+        ? true
+        : statusFilter === 'PENDING'
+        ? !u.is_active
+        : u.is_active;
+    return matchesSearch && matchesRole && matchesStatus;
   });
 
   return (
@@ -256,13 +264,13 @@ export const UserList: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">User Management</h1>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">User Management & Approvals</h1>
             <span className="text-xs font-semibold bg-blue-50 border border-blue-200 text-blue-700 px-2.5 py-0.5 rounded-full">
-              Odoo ERP RBAC
+              Enterprise RBAC
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Administrators create user accounts and assign roles. Roles strictly filter accessible modules after sign in.
+            Review newly registered HR accounts, grant administrator approvals, and manage system roles.
           </p>
         </div>
 
@@ -275,7 +283,74 @@ export const UserList: React.FC = () => {
         </button>
       </div>
 
-      {/* Filter and Search Bar matching Wireframe */}
+      {/* Success Notification Toast */}
+      {approvalSuccess && (
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+            <span className="font-semibold">{approvalSuccess}</span>
+          </div>
+          <button
+            onClick={() => setApprovalSuccess(null)}
+            className="text-emerald-700 hover:text-emerald-900 p-1 cursor-pointer"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Pending Approvals Attention Queue */}
+      {pendingUsers.length > 0 && (
+        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-amber-50 via-orange-50/50 to-amber-50 border border-amber-200 shadow-sm space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="h-8 w-8 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-xs shadow-md shadow-amber-500/30">
+                <Clock className="h-4 w-4 animate-spin-slow" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-amber-950">
+                  Pending HR Registration Queue ({pendingUsers.length})
+                </h3>
+                <p className="text-[11px] text-amber-800">
+                  New users are blocked from signing in until an Administrator approves their account.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setStatusFilter('PENDING')}
+              className="text-xs font-bold text-amber-800 hover:text-amber-950 underline cursor-pointer"
+            >
+              Filter Pending Only
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-1">
+            {pendingUsers.map((pu) => (
+              <div
+                key={pu.id}
+                className="bg-white/90 border border-amber-200/90 rounded-2xl p-3 flex items-center justify-between shadow-xs hover:border-amber-300 transition-all"
+              >
+                <div className="min-w-0 pr-2">
+                  <p className="text-xs font-bold text-slate-900 truncate">{pu.full_name}</p>
+                  <p className="text-[11px] font-mono text-slate-500 truncate">{pu.email}</p>
+                  <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                    {pu.role}
+                  </span>
+                </div>
+                <button
+                  onClick={() => handleApproveUser(pu)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-600/30 active:scale-95 transition-all shrink-0 cursor-pointer"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  <span>Approve</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Filter and Search Bar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="relative w-full sm:w-80">
           <Search className="h-4 w-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -288,20 +363,37 @@ export const UserList: React.FC = () => {
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Filter className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="w-full sm:w-44 py-2 px-3 text-xs rounded-xl border border-slate-200 bg-slate-50/60 text-slate-700 focus:border-blue-600 focus:outline-none cursor-pointer"
-          >
-            <option value="ALL">All Roles</option>
-            <option value="ADMIN">Admin</option>
-            <option value="HR_MANAGER">HR Manager</option>
-            <option value="HR_PAYROLL_MANAGER">Payroll Admin</option>
-            <option value="HR_PAYROLL_USER">Payroll User</option>
-            <option value="EMPLOYEE">Employee</option>
-          </select>
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          {/* Status Filter */}
+          <div className="flex items-center gap-1.5">
+            <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="py-2 px-3 text-xs rounded-xl border border-slate-200 bg-slate-50/60 text-slate-700 focus:border-blue-600 focus:outline-none cursor-pointer"
+            >
+              <option value="ALL">All Status ({users.length})</option>
+              <option value="PENDING">Pending Approval ({pendingUsers.length})</option>
+              <option value="ACTIVE">Active Users ({users.length - pendingUsers.length})</option>
+            </select>
+          </div>
+
+          {/* Role Filter */}
+          <div className="flex items-center gap-1.5">
+            <Filter className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="py-2 px-3 text-xs rounded-xl border border-slate-200 bg-slate-50/60 text-slate-700 focus:border-blue-600 focus:outline-none cursor-pointer"
+            >
+              <option value="ALL">All Roles</option>
+              <option value="ADMIN">Admin</option>
+              <option value="HR_MANAGER">HR Manager</option>
+              <option value="HR_PAYROLL_MANAGER">Payroll Admin</option>
+              <option value="HR_PAYROLL_USER">Payroll User</option>
+              <option value="EMPLOYEE">Employee</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -314,10 +406,10 @@ export const UserList: React.FC = () => {
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50/80 border-b border-slate-200/80 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
                 <tr>
-                  <th className="py-3.5 px-4">Employee</th>
+                  <th className="py-3.5 px-4">User / Employee</th>
                   <th className="py-3.5 px-4">Work Email</th>
                   <th className="py-3.5 px-4">Role</th>
-                  <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-4">Account Status</th>
                   <th className="py-3.5 px-4 text-right">Action</th>
                 </tr>
               </thead>
@@ -335,25 +427,39 @@ export const UserList: React.FC = () => {
                       label: u.role,
                       style: 'bg-slate-100 text-slate-700 border-slate-200',
                     };
+                    const isPending = !u.is_active;
 
                     return (
                       <tr
                         key={u.id}
-                        className="hover:bg-slate-50/60 transition-colors cursor-pointer group"
+                        className={`transition-colors cursor-pointer group ${
+                          isPending ? 'bg-amber-50/40 hover:bg-amber-50/80' : 'hover:bg-slate-50/60'
+                        }`}
                         onClick={() => openEditDrawer(u)}
                       >
                         {/* Employee Column */}
                         <td className="py-3.5 px-4">
                           <div className="flex items-center gap-2.5">
-                            <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-100 to-indigo-100 text-blue-700 font-bold flex items-center justify-center border border-blue-200/60 shrink-0">
+                            <div
+                              className={`h-8 w-8 rounded-full font-bold flex items-center justify-center border shrink-0 ${
+                                isPending
+                                  ? 'bg-amber-100 text-amber-800 border-amber-300'
+                                  : 'bg-gradient-to-tr from-blue-100 to-indigo-100 text-blue-700 border-blue-200/60'
+                              }`}
+                            >
                               {u.full_name?.charAt(0) || 'U'}
                             </div>
                             <div>
-                              <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                                {u.full_name}
+                              <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors flex items-center gap-1.5">
+                                <span>{u.full_name}</span>
+                                {isPending && (
+                                  <span className="text-[10px] bg-amber-200/80 text-amber-900 px-1.5 py-0.2 rounded font-bold">
+                                    New
+                                  </span>
+                                )}
                               </p>
                               <p className="text-[11px] text-slate-400">
-                                {emp ? `${emp.emp_code} &bull; ${emp.department}` : 'System User'}
+                                {emp ? `${emp.emp_code} &bull; ${emp.department}` : 'Registered Portal User'}
                               </p>
                             </div>
                           </div>
@@ -375,34 +481,37 @@ export const UserList: React.FC = () => {
 
                         {/* Status */}
                         <td className="py-3.5 px-4">
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
-                              u.is_active
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : 'bg-slate-100 text-slate-500 border-slate-200'
-                            }`}
-                          >
-                            <span
-                              className={`h-1.5 w-1.5 rounded-full ${
-                                u.is_active ? 'bg-emerald-500' : 'bg-slate-400'
-                              }`}
-                            />
-                            {u.is_active ? 'Active' : 'Inactive'}
-                          </span>
+                          {isPending ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border bg-amber-100/80 text-amber-900 border-amber-300">
+                              <Clock className="h-3 w-3 text-amber-700 animate-pulse" />
+                              Pending Approval
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border bg-emerald-50 text-emerald-700 border-emerald-200">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                              Active
+                            </span>
+                          )}
                         </td>
 
                         {/* Action Buttons */}
                         <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            onClick={() => handleToggleStatus(u)}
-                            className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
-                              u.is_active
-                                ? 'border-slate-200 text-slate-600 hover:bg-slate-100'
-                                : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
-                            }`}
-                          >
-                            {u.is_active ? 'Deactivate' : 'Activate'}
-                          </button>
+                          {isPending ? (
+                            <button
+                              onClick={() => handleApproveUser(u)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-600/30 transition-all active:scale-95 cursor-pointer"
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              <span>Approve HR</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleToggleStatus(u)}
+                              className="px-3 py-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer border-slate-200 text-slate-600 hover:bg-slate-100"
+                            >
+                              Deactivate
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );
