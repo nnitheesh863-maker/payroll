@@ -7,6 +7,7 @@ import { StatusBadge } from '../../components/common/StatusBadge';
 import { DataTable, Column } from '../../components/common/DataTable';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { Modal } from '../../components/common/Modal';
+import { pdfReports } from '../../utils/pdfGenerator';
 
 export const PayslipList: React.FC = () => {
   const [payslips, setPayslips] = useState<Payslip[]>([]);
@@ -142,9 +143,9 @@ export const PayslipList: React.FC = () => {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => payslipApi.downloadPdf(p.id, p.payslip_number || `PS-${p.id}`)}
+            onClick={() => pdfReports.exportEmployeePayslip(p)}
             icon={<Download className="h-3.5 w-3.5" />}
-            className="text-xs py-1 px-2 border-[#EADBCE] text-[#8C532B] hover:bg-[#FAF7F2]"
+            className="text-xs py-1 px-2 border-[#EADBCE] text-[#8C532B] hover:bg-[#FAF7F2] font-bold"
           >
             PDF
           </Button>
@@ -319,9 +320,9 @@ export const PayslipList: React.FC = () => {
             <div className="flex justify-end gap-3 pt-3 border-t border-[#EADBCE]">
               <Button
                 variant="outline"
-                onClick={() => payslipApi.downloadPdf(selectedPayslip.id, selectedPayslip.payslip_number || `PS-${selectedPayslip.id}`)}
+                onClick={() => pdfReports.exportEmployeePayslip(selectedPayslip)}
                 icon={<Download className="h-4 w-4" />}
-                className="border-[#8C532B] text-[#8C532B]"
+                className="border-[#8C532B] text-[#8C532B] hover:bg-[#FAF7F2] font-bold"
               >
                 Download PDF
               </Button>
