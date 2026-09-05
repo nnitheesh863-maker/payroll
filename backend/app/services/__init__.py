@@ -1,6 +1,6 @@
 """
 Services package — domain services for schedules, contracts, attendance,
-time off, salary configuration, and payroll calculation.
+time off, salary configuration, payroll calculation, and payruns.
 """
 
 from app.services.schedule_service import (
@@ -94,6 +94,19 @@ from app.services.payroll_calculation import (
     RuleEvaluationResult,
     calculate_payroll,
 )
+from app.services.payrun_service import (
+    PayrunComputationError,
+    PayrunDomainError,
+    PayrunStateError,
+    PayrunValidationError,
+    add_employee_to_payrun,
+    compute_payrun,
+    create_payrun,
+    get_payrun_totals,
+    mark_payrun_paid,
+    remove_employee_from_payrun,
+    validate_payrun,
+)
 
 __all__ = [
     "calculate_day_working_hours",
@@ -171,4 +184,15 @@ __all__ = [
     "PayrollResult",
     "RuleEvaluationResult",
     "calculate_payroll",
+    "PayrunDomainError",
+    "PayrunValidationError",
+    "PayrunStateError",
+    "PayrunComputationError",
+    "create_payrun",
+    "add_employee_to_payrun",
+    "remove_employee_from_payrun",
+    "compute_payrun",
+    "validate_payrun",
+    "mark_payrun_paid",
+    "get_payrun_totals",
 ]

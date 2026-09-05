@@ -13,3 +13,7 @@ from app.models.time_off_allocation import TimeOffAllocation  # noqa: F401
 from app.models.time_off_request import TimeOffRequest  # noqa: F401
 from app.models.salary_structure import SalaryStructure  # noqa: F401
 from app.models.salary_rule import SalaryRule  # noqa: F401
+from app.models.payrun import Payrun  # noqa: F401
+from app.models.payrun_employee import PayrunEmployee  # noqa: F401
+from app.models.payslip import Payslip  # noqa: F401
+from app.models.payslip_line import PayslipLine  # noqa: F401
