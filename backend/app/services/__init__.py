@@ -1,5 +1,6 @@
 """
-Services package — domain services for schedules and contracts.
+Services package — domain services for schedules, contracts, attendance
+and time off.
 """
 
 from app.services.schedule_service import (
@@ -18,6 +19,38 @@ from app.services.contract_service import (
     validate_contract_dates,
     validate_no_overlapping_contracts,
 )
+from app.services.attendance_service import (
+    AttendanceDomainError,
+    AttendanceDuplicateError,
+    AttendanceValidationError,
+    calculate_worked_hours,
+    correct_attendance,
+    get_attendance_health,
+    is_attendance_incomplete,
+    mark_absent,
+    record_check_in,
+    record_check_out,
+    validate_attendance_timestamps,
+    validate_no_duplicate_attendance,
+)
+from app.services.timeoff_service import (
+    InsufficientBalanceError,
+    TimeOffDomainError,
+    TimeOffOverlapError,
+    TimeOffStateError,
+    TimeOffValidationError,
+    approve_request,
+    calculate_requested_days,
+    cancel_request,
+    find_applicable_allocation,
+    get_allocation_balance,
+    get_time_off_balance,
+    reject_request,
+    submit_request,
+    validate_allocation_values,
+    validate_no_overlapping_requests,
+    validate_request_dates,
+)
 
 __all__ = [
     "calculate_day_working_hours",
@@ -32,4 +65,32 @@ __all__ = [
     "do_date_ranges_overlap",
     "validate_no_overlapping_contracts",
     "get_applicable_contract",
+    "AttendanceDomainError",
+    "AttendanceValidationError",
+    "AttendanceDuplicateError",
+    "calculate_worked_hours",
+    "validate_attendance_timestamps",
+    "validate_no_duplicate_attendance",
+    "is_attendance_incomplete",
+    "record_check_in",
+    "record_check_out",
+    "mark_absent",
+    "correct_attendance",
+    "get_attendance_health",
+    "TimeOffDomainError",
+    "TimeOffValidationError",
+    "TimeOffStateError",
+    "TimeOffOverlapError",
+    "InsufficientBalanceError",
+    "calculate_requested_days",
+    "validate_request_dates",
+    "validate_allocation_values",
+    "get_allocation_balance",
+    "find_applicable_allocation",
+    "validate_no_overlapping_requests",
+    "submit_request",
+    "approve_request",
+    "reject_request",
+    "cancel_request",
+    "get_time_off_balance",
 ]

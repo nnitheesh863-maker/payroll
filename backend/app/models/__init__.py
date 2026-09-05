@@ -7,3 +7,7 @@ from app.models.employment_history import EmploymentHistory  # noqa: F401
 from app.models.working_schedule import WorkingSchedule  # noqa: F401
 from app.models.working_schedule_day import WorkingScheduleDay  # noqa: F401
 from app.models.contract import Contract  # noqa: F401
+from app.models.attendance import Attendance  # noqa: F401
+from app.models.time_off_type import TimeOffType  # noqa: F401
+from app.models.time_off_allocation import TimeOffAllocation  # noqa: F401
+from app.models.time_off_request import TimeOffRequest  # noqa: F401
