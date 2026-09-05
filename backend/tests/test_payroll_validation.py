@@ -27,6 +27,7 @@ from app.services import (
     create_payrun,
 )
 from app.services.payroll_validation_service import validate_payrun_result
+from tests.helpers import AuthedClient, login_token, seed_admin
 
 
 @pytest.fixture()
@@ -60,9 +61,10 @@ def api_client():
         db.create_all()
         seed = _seed_basic(db.session, full_employee=False)
         db.session.commit()
+        seed_admin(db.session)
         ids = {k: str(v) for k, v in seed["ids"].items()}
-        with app.test_client() as testing_client:
-            yield testing_client, ids
+        with app.test_client() as raw:
+            yield AuthedClient(raw, login_token(raw)), ids
         db.session.remove()
         db.drop_all()
 

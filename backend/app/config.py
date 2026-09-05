@@ -31,5 +31,12 @@ class Settings(BaseSettings):
     MAIL_USE_TLS: bool = False
     MAIL_DEFAULT_SENDER: str = "payroll@peoplepay360.com"
 
+    # ── Authentication (Phase 8) ───────────────────────────────────
+    # Override JWT_SECRET_KEY in every real deployment. The default is
+    # for local development and tests only — never use it in production.
+    JWT_SECRET_KEY: str = "dev-only-insecure-secret-change-me"
+    JWT_ACCESS_TOKEN_EXPIRES_MINUTES: int = 60
+    JWT_REFRESH_TOKEN_EXPIRES_DAYS: int = 7
+
 
 settings = Settings()

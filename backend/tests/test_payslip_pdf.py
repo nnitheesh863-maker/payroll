@@ -19,6 +19,7 @@ from app.services.payslip_pdf_service import (
     generate_payslip_pdf,
     payslip_filename,
 )
+from tests.helpers import AuthedClient, login_token, seed_admin
 
 
 @pytest.fixture()
@@ -52,12 +53,13 @@ def api_client():
         db.create_all()
         seed = _seed(db.session)
         db.session.commit()
+        seed_admin(db.session)
         ids = {
             "payslip_id": str(seed["payslip"].id),
             "employee_code": seed["employee"].employee_code,
         }
-        with app.test_client() as testing_client:
-            yield testing_client, ids
+        with app.test_client() as raw:
+            yield AuthedClient(raw, login_token(raw)), ids
         db.session.remove()
         db.drop_all()
 

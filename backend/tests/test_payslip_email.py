@@ -20,6 +20,7 @@ from app.services.email_service import (
     build_payslip_message,
     send_payslips_for_payrun,
 )
+from tests.helpers import AuthedClient, login_token, seed_admin
 
 
 @pytest.fixture()
@@ -53,8 +54,9 @@ def api_client():
         db.create_all()
         seed = _seed(db.session)
         db.session.commit()
-        with app.test_client() as testing_client:
-            yield testing_client, str(seed["payrun"].id)
+        seed_admin(db.session)
+        with app.test_client() as raw:
+            yield AuthedClient(raw, login_token(raw)), str(seed["payrun"].id)
         db.session.remove()
         db.drop_all()
 

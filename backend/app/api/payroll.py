@@ -1,10 +1,10 @@
 """
 Payrun & Payslip API Blueprint — database-backed Phase 6 routes.
 
-Replaces the former in-memory mock while preserving every route path and
-HTTP method the frontend relies on. All business logic lives in
-``app.services.payrun_service``; routes only serialize, commit, and map
-domain errors to HTTP status codes.
+Phase 8 guards apply: payroll operations require payroll permissions;
+employees may read only their own payslips (ownership via the JWT-linked
+employee). All business logic lives in ``app.services.payrun_service``;
+routes only serialize, commit, and map domain errors to HTTP codes.
 
 Notes:
 - ``status`` is serialized UPPERCASE to preserve the established API
@@ -21,7 +21,21 @@ import uuid
 from flask import Blueprint, jsonify, request
 from sqlalchemy.exc import IntegrityError
 
+from app.api.auth_helpers import (
+    get_current_user,
+    jwt_required,
+    require_permissions,
+)
 from app.extensions import db
+from app.services.auth_service import (
+    PERMISSION_PAYROLL_COMPUTE,
+    PERMISSION_PAYROLL_DASHBOARD,
+    PERMISSION_PAYROLL_PAY,
+    PERMISSION_PAYROLL_READ,
+    PERMISSION_PAYROLL_SEND,
+    PERMISSION_PAYROLL_VALIDATE,
+    has_permission,
+)
 from app.services.payrun_service import (
     PayrunComputationError,
     PayrunStateError,
@@ -36,6 +50,18 @@ from app.services.payrun_service import (
 )
 
 payroll_bp = Blueprint("payroll", __name__, url_prefix="/api")
+
+
+def _forbidden(detail="Insufficient permissions."):
+    return jsonify({"detail": detail}), 403
+
+
+def _own_employee_only(user, employee_id):
+    """True when a non-payroll-reader may access this employee's data."""
+    return (
+        user.employee_id is not None
+        and str(employee_id) == str(user.employee_id)
+    )
 
 
 # ── Serialization ────────────────────────────────────────────────
@@ -168,6 +194,7 @@ def _lookup_payrun(payrun_id):
 # ── Payruns ──────────────────────────────────────────────────────
 
 @payroll_bp.get("/payruns")
+@require_permissions(PERMISSION_PAYROLL_READ)
 def list_payruns():
     from app.models.payrun import Payrun
 
@@ -179,6 +206,7 @@ def list_payruns():
 
 
 @payroll_bp.get("/payruns/<payrun_id>")
+@require_permissions(PERMISSION_PAYROLL_READ)
 def get_payrun(payrun_id):
     payrun = _lookup_payrun(payrun_id)
     if payrun is None:
@@ -187,6 +215,7 @@ def get_payrun(payrun_id):
 
 
 @payroll_bp.post("/payruns")
+@require_permissions(PERMISSION_PAYROLL_COMPUTE)
 def create_payrun_route():
     data = request.get_json(silent=True) or {}
     try:
@@ -218,6 +247,7 @@ def create_payrun_route():
 
 
 @payroll_bp.get("/payruns/<payrun_id>/payslips")
+@require_permissions(PERMISSION_PAYROLL_READ)
 def get_payrun_payslips(payrun_id):
     payrun = _lookup_payrun(payrun_id)
     if payrun is None:
@@ -233,6 +263,7 @@ def get_payrun_payslips(payrun_id):
 
 
 @payroll_bp.post("/payruns/<payrun_id>/compute")
+@require_permissions(PERMISSION_PAYROLL_COMPUTE)
 def compute_payrun_route(payrun_id):
     try:
         payrun = compute_payrun(db.session, payrun_id)
@@ -252,6 +283,7 @@ def compute_payrun_route(payrun_id):
 
 
 @payroll_bp.post("/payruns/<payrun_id>/validate")
+@require_permissions(PERMISSION_PAYROLL_VALIDATE)
 def validate_payrun_route(payrun_id):
     """Phase 7.1 gated lifecycle transition.
 
@@ -304,6 +336,7 @@ def validate_payrun_route(payrun_id):
 
 
 @payroll_bp.post("/payruns/<payrun_id>/mark-paid")
+@require_permissions(PERMISSION_PAYROLL_PAY)
 def mark_paid_route(payrun_id):
     try:
         payrun = mark_payrun_paid(db.session, payrun_id)
@@ -320,6 +353,7 @@ def mark_paid_route(payrun_id):
 
 
 @payroll_bp.post("/payruns/<payrun_id>/employees")
+@require_permissions(PERMISSION_PAYROLL_COMPUTE)
 def add_payrun_employee_route(payrun_id):
     data = request.get_json(silent=True) or {}
     try:
@@ -347,6 +381,7 @@ def add_payrun_employee_route(payrun_id):
 
 
 @payroll_bp.delete("/payruns/<payrun_id>/employees/<employee_id>")
+@require_permissions(PERMISSION_PAYROLL_COMPUTE)
 def remove_payrun_employee_route(payrun_id, employee_id):
     try:
         removed = remove_employee_from_payrun(db.session, payrun_id, employee_id)
@@ -363,6 +398,7 @@ def remove_payrun_employee_route(payrun_id, employee_id):
 
 
 @payroll_bp.post("/payruns/<payrun_id>/send-payslips")
+@require_permissions(PERMISSION_PAYROLL_SEND)
 def send_payslips(payrun_id):
     """Phase 7.3 bulk email delivery of persisted payslip PDFs."""
     from app.services.email_service import send_payslips_for_payrun
@@ -380,6 +416,7 @@ def send_payslips(payrun_id):
 # ── Dashboard (Phase 7.4 — real aggregations) ────────────────────
 
 @payroll_bp.get("/payroll/dashboard")
+@require_permissions(PERMISSION_PAYROLL_DASHBOARD)
 def payroll_dashboard():
     """Real payroll/HR dashboard aggregated from persisted rows."""
     from app.services.payroll_dashboard_service import get_payroll_dashboard
@@ -397,21 +434,30 @@ def payroll_dashboard():
     return jsonify(payload), 200
 
 
-# ── Payslips ─────────────────────────────────────────────────────
+# ── Payslips (ownership: employees see only their own) ──────────
 
 @payroll_bp.get("/payslips")
+@jwt_required
 def list_payslips():
     from app.models.payslip import Payslip
 
+    user = get_current_user()
     query = Payslip.query
     employee_id = request.args.get("employee_id")
     if employee_id:
         try:
-            query = query.filter(
-                Payslip.employee_id == uuid.UUID(str(employee_id))
-            )
+            employee_uuid = uuid.UUID(str(employee_id))
         except (ValueError, AttributeError, TypeError):
             return jsonify({"detail": "Invalid employee_id."}), 400
+        if not has_permission(
+            user.role, PERMISSION_PAYROLL_READ
+        ) and not _own_employee_only(user, employee_uuid):
+            return _forbidden()
+        query = query.filter(Payslip.employee_id == employee_uuid)
+    elif not has_permission(user.role, PERMISSION_PAYROLL_READ):
+        if user.employee_id is None:
+            return _forbidden()
+        query = query.filter(Payslip.employee_id == user.employee_id)
     payrun_id = request.args.get("payrun_id")
     if payrun_id:
         try:
@@ -421,7 +467,15 @@ def list_payslips():
     return jsonify([_payslip_to_dict(s) for s in query.all()]), 200
 
 
+def _payslip_visible_to(payslip, user) -> bool:
+    """Payroll readers see all slips; others only their own."""
+    if has_permission(user.role, PERMISSION_PAYROLL_READ):
+        return True
+    return _own_employee_only(user, payslip.employee_id)
+
+
 @payroll_bp.get("/payslips/<payslip_id>")
+@jwt_required
 def get_payslip(payslip_id):
     from app.models.payslip import Payslip
 
@@ -432,10 +486,13 @@ def get_payslip(payslip_id):
     payslip = db.session.get(Payslip, uid)
     if payslip is None:
         return _not_found("Payslip not found")
+    if not _payslip_visible_to(payslip, get_current_user()):
+        return _forbidden()
     return jsonify(_payslip_to_dict(payslip, include_lines=True)), 200
 
 
 @payroll_bp.get("/payslips/<payslip_id>/pdf")
+@jwt_required
 def get_payslip_pdf(payslip_id):
     """Download the persisted payslip as a PDF (presentation only)."""
     from flask import Response
@@ -448,11 +505,18 @@ def get_payslip_pdf(payslip_id):
     )
 
     try:
-        pdf_bytes = generate_payslip_pdf(db.session, payslip_id)
+        uid = uuid.UUID(str(payslip_id))
+    except (ValueError, AttributeError, TypeError):
+        return _not_found("Payslip not found")
+    payslip = db.session.get(Payslip, uid)
+    if payslip is None:
+        return _not_found("Payslip not found")
+    if not _payslip_visible_to(payslip, get_current_user()):
+        return _forbidden()
+    try:
+        pdf_bytes = generate_payslip_pdf(db.session, payslip.id)
     except PayslipPdfError:
         return _not_found("Payslip not found")
-    # Identity map: no extra query; needed only for the filename.
-    payslip = db.session.get(Payslip, uuid.UUID(str(payslip_id)))
     filename = payslip_filename(payslip)
     return Response(
         pdf_bytes,

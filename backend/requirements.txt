@@ -17,5 +17,8 @@ alembic>=1.13.0
 # Phase 7 — PDF generation
 reportlab>=4.0.0
 
+# Phase 8 — JWT authentication
+PyJWT>=2.8.0
+
 # Testing
 pytest>=8.0.0

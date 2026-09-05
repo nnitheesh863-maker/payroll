@@ -13,11 +13,12 @@ import pytest
 from app import create_app
 from app.extensions import db
 from app.models import Contract, Employee, SalaryRule, SalaryStructure
+from tests.helpers import AuthedClient, login_token, seed_admin
 
 
 @pytest.fixture()
 def client():
-    """Flask test client with seeded structure, employee and contract."""
+    """Authenticated Flask test client with seeded payroll data."""
     app = create_app(
         {
             "TESTING": True,
@@ -69,12 +70,13 @@ def client():
         )
         db.session.add(contract)
         db.session.commit()
+        seed_admin(db.session)
         ids = {
             "structure_id": str(struct.id),
             "employee_id": str(emp.id),
         }
-        with app.test_client() as testing_client:
-            yield testing_client, ids
+        with app.test_client() as raw:
+            yield AuthedClient(raw, login_token(raw)), ids
         db.session.remove()
         db.drop_all()
 

@@ -24,6 +24,7 @@ from app.models import (
 )
 from app.services import compute_payrun, create_payrun, mark_payrun_paid
 from app.services.payroll_dashboard_service import get_payroll_dashboard
+from tests.helpers import AuthedClient, login_token, seed_admin
 
 
 @pytest.fixture()
@@ -57,8 +58,9 @@ def api_client():
         db.create_all()
         _seed_month(db.session, date(2026, 1, 1), date(2026, 1, 31), "PR-JAN")
         db.session.commit()
-        with app.test_client() as testing_client:
-            yield testing_client
+        seed_admin(db.session)
+        with app.test_client() as raw:
+            yield AuthedClient(raw, login_token(raw))
         db.session.remove()
         db.drop_all()
 
