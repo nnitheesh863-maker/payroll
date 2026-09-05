@@ -107,6 +107,11 @@ from app.services.payrun_service import (
     remove_employee_from_payrun,
     validate_payrun,
 )
+from app.services.payroll_validation_service import (
+    PayrunValidationResult,
+    ValidationIssue,
+    validate_payrun_result,
+)
 
 __all__ = [
     "calculate_day_working_hours",
@@ -195,4 +200,7 @@ __all__ = [
     "validate_payrun",
     "mark_payrun_paid",
     "get_payrun_totals",
+    "PayrunValidationResult",
+    "ValidationIssue",
+    "validate_payrun_result",
 ]
