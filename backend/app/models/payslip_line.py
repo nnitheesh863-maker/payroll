@@ -42,6 +42,20 @@ class PayslipLine(Base, TimestampMixin):
     payslip = db.relationship("Payslip", back_populates="lines")
     salary_rule = db.relationship("SalaryRule")
 
+    def to_dict(self) -> dict:
+        return {
+            "id": str(self.id),
+            "payslip_id": str(self.payslip_id),
+            "salary_rule_id": str(self.salary_rule_id) if self.salary_rule_id else None,
+            "rule_code": self.rule_code,
+            "rule_name": self.rule_name,
+            "category": self.category,
+            "calculation_method": self.calculation_method,
+            "sequence": self.sequence,
+            "base_amount": float(self.base_amount) if self.base_amount is not None else None,
+            "amount": float(self.amount) if self.amount is not None else 0.0,
+        }
+
     def __repr__(self) -> str:  # pragma: no cover
         return (
             f"<PayslipLine {self.rule_code} ({self.category}) "

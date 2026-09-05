@@ -61,5 +61,44 @@ class Payrun(Base, TimestampMixin):
         cascade="all, delete-orphan",
     )
 
+    def to_dict(self) -> dict:
+        from decimal import Decimal
+
+        total_gross = Decimal("0.00")
+        total_ded = Decimal("0.00")
+        total_net = Decimal("0.00")
+        total_contrib = Decimal("0.00")
+
+        for s in self.payslips:
+            if s.gross_salary is not None:
+                total_gross += Decimal(str(s.gross_salary))
+            if s.total_deductions is not None:
+                total_ded += Decimal(str(s.total_deductions))
+            if s.net_salary is not None:
+                total_net += Decimal(str(s.net_salary))
+            if s.total_contributions is not None:
+                total_contrib += Decimal(str(s.total_contributions))
+
+        return {
+            "id": str(self.id),
+            "name": self.name,
+            "reference": self.reference,
+            "batch_number": self.reference,
+            "period_start": self.period_start.isoformat() if self.period_start else None,
+            "period_end": self.period_end.isoformat() if self.period_end else None,
+            "salary_structure_id": str(self.salary_structure_id) if self.salary_structure_id else None,
+            "status": (self.status or "draft").upper(),
+            "employee_count": len(self.payrun_employees),
+            "employee_ids": [str(pe.employee_id) for pe in self.payrun_employees],
+            "total_gross": float(total_gross),
+            "total_deductions": float(total_ded),
+            "total_net": float(total_net),
+            "total_employer_contributions": float(total_contrib),
+            "computed_at": self.computed_at.isoformat() if self.computed_at else None,
+            "validated_at": self.validated_at.isoformat() if self.validated_at else None,
+            "paid_at": self.paid_at.isoformat() if self.paid_at else None,
+            "created_at": self.created_at.isoformat() if hasattr(self, "created_at") and self.created_at else None,
+        }
+
     def __repr__(self) -> str:  # pragma: no cover
         return f"<Payrun {self.reference} status={self.status} [{self.period_start} -> {self.period_end}]>"

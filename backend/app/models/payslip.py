@@ -83,6 +83,37 @@ class Payslip(Base, TimestampMixin):
         order_by="PayslipLine.sequence",
     )
 
+    def to_dict(self) -> dict:
+        emp_name = ""
+        emp_code = ""
+        if self.employee:
+            emp_name = f"{self.employee.first_name} {self.employee.last_name}".strip()
+            emp_code = self.employee.employee_code or ""
+
+        return {
+            "id": str(self.id),
+            "payrun_id": str(self.payrun_id),
+            "employee_id": str(self.employee_id),
+            "employee_name": emp_name,
+            "employee_code": emp_code,
+            "contract_id": str(self.contract_id) if self.contract_id else None,
+            "salary_structure_id": str(self.salary_structure_id) if self.salary_structure_id else None,
+            "period_start": self.period_start.isoformat() if self.period_start else None,
+            "period_end": self.period_end.isoformat() if self.period_end else None,
+            "basic_salary": float(self.basic_salary or 0),
+            "total_earnings": float(self.total_earnings or 0),
+            "total_allowances": float(self.total_allowances or 0),
+            "gross_salary": float(self.gross_salary or 0),
+            "total_deductions": float(self.total_deductions or 0),
+            "total_contributions": float(self.total_contributions or 0),
+            "net_salary": float(self.net_salary or 0),
+            "status": (self.status or "draft").upper(),
+            "computed_at": self.computed_at.isoformat() if self.computed_at else None,
+            "validated_at": self.validated_at.isoformat() if self.validated_at else None,
+            "paid_at": self.paid_at.isoformat() if self.paid_at else None,
+            "lines": [line.to_dict() for line in self.lines],
+        }
+
     def __repr__(self) -> str:  # pragma: no cover
         return (
             f"<Payslip employee={self.employee_id} payrun={self.payrun_id} "

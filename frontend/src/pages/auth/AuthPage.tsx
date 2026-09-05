@@ -84,8 +84,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => 
     setError(null);
     setIsLoading(true);
     try {
-      const res: any = await register(regFullName || 'HR Specialist', regEmail, regRole, regPassword);
-      if (res?.status === 'PENDING' || !res?.access_token || !res?.user?.is_active) {
+      const res: any = await register(
+        regFullName || (regRole === 'ADMIN' ? 'System Administrator' : 'HR Specialist'),
+        regEmail,
+        regRole,
+        regPassword
+      );
+      // Only HR and staff accounts go to pending queue; Admin accounts are active immediately
+      if (regRole !== 'ADMIN' && (res?.status === 'PENDING' || !res?.access_token || !res?.user?.is_active)) {
         setRegisteredPendingInfo({
           name: regFullName || 'HR User',
           email: regEmail,

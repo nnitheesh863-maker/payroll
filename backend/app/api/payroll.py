@@ -11,6 +11,7 @@ from datetime import date
 import uuid
 
 from flask import Blueprint, Response, jsonify, request
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
 from app.api.auth_helpers import (
@@ -73,7 +74,7 @@ def list_payruns():
     status = request.args.get("status")
     query = Payrun.query.order_by(Payrun.period_start.desc())
     if status:
-        query = query.filter(Payrun.status == status.strip().upper())
+        query = query.filter(func.lower(Payrun.status) == status.strip().lower())
     payruns = query.all()
     return jsonify([p.to_dict() for p in payruns]), 200
 
@@ -101,7 +102,7 @@ def create_payrun_route():
     period_start = data.get("period_start")
     period_end = data.get("period_end")
     salary_structure_id = data.get("salary_structure_id")
-    employee_ids = data.get("employee_ids") or data.get("selected_employee_ids")
+    employee_ids = data.get("employee_ids") if "employee_ids" in data else data.get("selected_employee_ids")
 
     if not name or not reference or not period_start or not period_end:
         return _bad_request("name, reference, period_start, and period_end are required.")
@@ -191,7 +192,7 @@ def validate_payrun_route(payrun_id):
     if payrun is None:
         return _not_found("Payrun not found")
 
-    if payrun.status != "COMPUTED":
+    if (payrun.status or "").lower() != "computed":
         return _conflict(f"Payrun in status '{payrun.status}' cannot be validated.")
 
     try:
@@ -292,8 +293,9 @@ def add_employee_to_payrun_route(payrun_id):
         return _bad_request("Invalid employee_id")
 
     try:
-        payrun = add_employee_to_payrun(db.session, uid, emp_uuid)
+        add_employee_to_payrun(db.session, uid, emp_uuid)
         db.session.commit()
+        payrun = db.session.get(Payrun, uid)
         return jsonify(payrun.to_dict()), 201
     except PayrunValidationError as err:
         db.session.rollback()
@@ -321,8 +323,11 @@ def remove_employee_from_payrun_route(payrun_id, employee_id):
         return _not_found("Invalid employee_id")
 
     try:
-        payrun = remove_employee_from_payrun(db.session, uid, emp_uuid)
+        removed = remove_employee_from_payrun(db.session, uid, emp_uuid)
+        if not removed:
+            return _not_found("Employee is not part of this payrun.")
         db.session.commit()
+        payrun = db.session.get(Payrun, uid)
         return jsonify(payrun.to_dict()), 200
     except PayrunValidationError as err:
         db.session.rollback()
