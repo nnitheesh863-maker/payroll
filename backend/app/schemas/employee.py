@@ -50,7 +50,7 @@ class EmployeeSummary(BaseModel):
     emp_code: str
     first_name: str
     last_name: str
-    full_name: str
+    full_name: Optional[str] = None
     email: str
     department: str
     position: str

@@ -159,7 +159,7 @@ def compute_payrun(
             unpaid_leave_days=unpaid_leave_days,
         )
 
-        ps_num = f"PS-{payrun.period_start.strftime('%Y%m')}-{emp.emp_code}"
+        ps_num = f"PS-{payrun.period_start.strftime('%Y%m')}-{payrun.id}-{emp.emp_code}"
         payslip = Payslip(
             payslip_number=ps_num,
             payrun_id=payrun.id,

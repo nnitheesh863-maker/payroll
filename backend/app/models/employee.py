@@ -40,3 +40,7 @@ class Employee(Base):
     timeoff_requests = relationship("TimeOffRequest", back_populates="employee", foreign_keys="TimeOffRequest.employee_id", cascade="all, delete-orphan")
     timeoff_allocations = relationship("TimeOffAllocation", back_populates="employee", cascade="all, delete-orphan")
     payslips = relationship("Payslip", back_populates="employee", cascade="all, delete-orphan")
+
+    @property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}"
