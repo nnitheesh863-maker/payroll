@@ -133,6 +133,8 @@ export interface SalaryRule {
   rule_type: 'PERCENTAGE' | 'FIXED' | 'FORMULA';
   amount_or_percentage: number;
   base_code?: string;
+  formula?: string;
+  fixed_amount?: number;
   sequence: number;
   is_active: boolean;
 }

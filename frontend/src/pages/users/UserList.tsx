@@ -240,7 +240,10 @@ export const UserList: React.FC = () => {
     EMPLOYEE: { label: 'Employee', style: 'bg-slate-100 text-slate-700 border-slate-200' },
   };
 
-  const pendingUsers = users.filter((u) => !u.is_active && u.role !== 'ADMIN');
+  const isHRRole = (role?: string) =>
+    ['HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER'].includes(role || '');
+
+  const pendingUsers = users.filter((u) => !u.is_active && isHRRole(u.role));
 
   // Filtered Users
   const filteredUsers = users.filter((u) => {
@@ -249,7 +252,7 @@ export const UserList: React.FC = () => {
       (u.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (u.role || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesRole = roleFilter === 'ALL' || u.role === roleFilter;
-    const isUserPending = !u.is_active && u.role !== 'ADMIN';
+    const isUserPending = !u.is_active && isHRRole(u.role);
     const matchesStatus =
       statusFilter === 'ALL'
         ? true
@@ -428,7 +431,7 @@ export const UserList: React.FC = () => {
                       label: u.role,
                       style: 'bg-slate-100 text-slate-700 border-slate-200',
                     };
-                    const isPending = !u.is_active && u.role !== 'ADMIN';
+                    const isPending = !u.is_active && isHRRole(u.role);
 
                     return (
                       <tr

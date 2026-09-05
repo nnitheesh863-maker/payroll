@@ -229,6 +229,16 @@ def register():
     if not full_name:
         return jsonify({"detail": "Full name is required."}), 400
 
+    # Ensure tables exist
+    try:
+        db.create_all()
+    except Exception:
+        pass
+
+    # Check if in DEFAULT_USERS
+    if email in DEFAULT_USERS:
+        return jsonify({"detail": "Email already registered."}), 400
+
     try:
         user = create_user(
             db.session,
@@ -239,6 +249,7 @@ def register():
             is_active=True,
         )
         db.session.commit()
+
         return (
             jsonify(
                 {
@@ -255,4 +266,4 @@ def register():
         return jsonify({"detail": str(err)}), 400
     except Exception as err:
         db.session.rollback()
-        return jsonify({"detail": "Email already registered."}), 400
+        return jsonify({"detail": f"Registration failed: {str(err)}"}), 400

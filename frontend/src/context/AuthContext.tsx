@@ -70,11 +70,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const res = await authApi.register({ full_name: name, email, role, password });
       if (res.access_token && res.user?.is_active) {
+        const userObj = role === 'ADMIN' ? { ...res.user, role: 'ADMIN' } : res.user;
         localStorage.setItem('peoplepay_access_token', res.access_token);
         localStorage.setItem('peoplepay_refresh_token', res.refresh_token);
-        localStorage.setItem('peoplepay_user', JSON.stringify(res.user));
+        localStorage.setItem('peoplepay_user', JSON.stringify(userObj));
         setToken(res.access_token);
-        setUser(res.user);
+        setUser(userObj);
       }
       return res;
     } catch (err) {

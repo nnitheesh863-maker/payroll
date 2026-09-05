@@ -40,6 +40,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => 
   // Login Form States
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [loginAdminToken, setLoginAdminToken] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   // Register Form States
@@ -48,6 +49,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => 
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regRole, setRegRole] = useState<Role>('HR_MANAGER');
+  const [regAdminToken, setRegAdminToken] = useState('');
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [registeredPendingInfo, setRegisteredPendingInfo] = useState<{
     name: string;
@@ -63,9 +65,23 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => 
 
   const { login, register } = useAuth();
 
+  const isHRRole = (role: Role | string) =>
+    ['HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER'].includes(role);
+
+  const isAdminLogin = loginEmail.trim().toLowerCase().includes('admin');
+
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    // Admin security token verification
+    if (isAdminLogin) {
+      if (loginAdminToken.trim() !== 'odoo-2026') {
+        setError('Admin Security Token required. Please enter "odoo-2026" to log in as Administrator.');
+        return;
+      }
+    }
+
     setIsLoading(true);
     try {
       await login(loginEmail, loginPassword);
@@ -82,18 +98,28 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    // If registering as Admin, verify security token
+    if (regRole === 'ADMIN') {
+      if (regAdminToken.trim() !== 'odoo-2026') {
+        setError('Invalid Admin Security Token. Enter "odoo-2026" to register as Administrator.');
+        return;
+      }
+    }
+
     setIsLoading(true);
     try {
       const res: any = await register(
-        regFullName || (regRole === 'ADMIN' ? 'System Administrator' : 'HR Specialist'),
+        regFullName || (regRole === 'ADMIN' ? 'System Administrator' : 'Staff Member'),
         regEmail,
         regRole,
         regPassword
       );
-      // Only HR and staff accounts go to pending queue; Admin accounts are active immediately
-      if (regRole !== 'ADMIN' && (res?.status === 'PENDING' || !res?.access_token || !res?.user?.is_active)) {
+
+      // ONLY HR registrations are marked as Pending Approval; Admin and others are active immediately
+      if (isHRRole(regRole)) {
         setRegisteredPendingInfo({
-          name: regFullName || 'HR User',
+          name: regFullName || 'HR Specialist',
           email: regEmail,
           role: regRole,
         });
@@ -101,12 +127,20 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => 
         setIsLoading(false);
         return;
       }
+
       setSuccessMsg('Workspace created successfully! Redirecting...');
       setTimeout(() => {
         navigate('/dashboard');
       }, 500);
     } catch (err: any) {
-      setError(err?.response?.data?.detail || 'Unable to create workspace. Please try again.');
+      const detail = err?.response?.data?.detail;
+      if (typeof detail === 'string') {
+        setError(detail);
+      } else if (err?.message) {
+        setError(err.message);
+      } else {
+        setError('Unable to create workspace. Please verify your details.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -264,6 +298,37 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => 
                   </div>
                 </div>
 
+                {/* Admin Security Token Prompt if logging in with Admin credentials */}
+                {isAdminLogin && (
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50/60 border border-amber-300 shadow-xs space-y-1.5 animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                        <ShieldCheck className="h-4 w-4 text-amber-600 shrink-0" />
+                        Admin Security Token <span className="text-rose-600">*</span>
+                      </label>
+                      <span className="text-[10px] font-mono font-bold text-amber-800 bg-amber-200/70 border border-amber-300 px-2 py-0.5 rounded-md">
+                        Required: odoo-2026
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 h-6 w-6 rounded-md bg-amber-100/90 flex items-center justify-center text-amber-800">
+                        <Lock className="h-3.5 w-3.5" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Enter token: odoo-2026"
+                        value={loginAdminToken}
+                        onChange={(e) => setLoginAdminToken(e.target.value)}
+                        required
+                        className="w-full rounded-xl border border-amber-300 bg-white pl-11 pr-4 py-2 text-xs font-mono font-bold text-amber-950 placeholder-amber-400 focus:border-amber-600 focus:bg-white focus:outline-none focus:ring-3 focus:ring-amber-500/20 transition-all"
+                      />
+                    </div>
+                    <p className="text-[10px] text-amber-800">
+                      Administrator authorization token is required to authenticate system control privileges.
+                    </p>
+                  </div>
+                )}
+
                 <button
                   type="submit"
                   disabled={isLoading}
@@ -375,7 +440,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => 
                       Create your workspace
                     </h2>
                     <p className="text-xs sm:text-sm text-[#735338] mt-1">
-                      Register your HR account. New registrations will be verified and approved by the Administrator.
+                      Register your corporate account. HR registrations will require Administrator approval before sign-in.
                     </p>
                   </div>
 
@@ -463,11 +528,11 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => 
                           onChange={(e) => setRegRole(e.target.value as Role)}
                           className="w-full rounded-xl border border-[#E5D7C7] bg-[#FAF7F2]/80 px-3 py-2 text-xs text-[#381E0D] focus:border-[#8C532B] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#8C532B]/10 transition-all font-medium cursor-pointer"
                         >
-                          <option value="HR_MANAGER">HR Manager</option>
-                          <option value="HR_PAYROLL_MANAGER">Payroll Manager</option>
-                          <option value="HR_PAYROLL_USER">Payroll Specialist</option>
-                          <option value="EMPLOYEE">Employee</option>
-                          <option value="ADMIN">Administrator</option>
+                          <option value="HR_MANAGER">HR Manager (Requires Approval)</option>
+                          <option value="HR_PAYROLL_MANAGER">Payroll Manager (Requires Approval)</option>
+                          <option value="HR_PAYROLL_USER">Payroll Specialist (Requires Approval)</option>
+                          <option value="EMPLOYEE">Employee (Direct Access)</option>
+                          <option value="ADMIN">Administrator (Security Token Required)</option>
                         </select>
                       </div>
 
@@ -498,16 +563,53 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => 
                       </div>
                     </div>
 
+                    {/* Admin Security Token Input when Registering as Admin */}
+                    {regRole === 'ADMIN' && (
+                      <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50/60 border border-amber-300 shadow-xs space-y-1.5 animate-in fade-in duration-200">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                            <ShieldCheck className="h-4 w-4 text-amber-600 shrink-0" />
+                            Admin Security Token <span className="text-rose-600">*</span>
+                          </label>
+                          <span className="text-[10px] font-mono font-bold text-amber-800 bg-amber-200/70 border border-amber-300 px-2 py-0.5 rounded-md">
+                            Required: odoo-2026
+                          </span>
+                        </div>
+                        <div className="relative">
+                          <div className="absolute left-2.5 top-1/2 -translate-y-1/2 h-5 w-5 rounded bg-amber-100/90 flex items-center justify-center text-amber-800">
+                            <Lock className="h-3 w-3" />
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="Enter token: odoo-2026"
+                            value={regAdminToken}
+                            onChange={(e) => setRegAdminToken(e.target.value)}
+                            required
+                            className="w-full rounded-xl border border-amber-300 bg-white pl-9 pr-3 py-2 text-xs font-mono font-bold text-amber-950 placeholder-amber-400 focus:border-amber-600 focus:outline-none focus:ring-3 focus:ring-amber-500/20 transition-all"
+                          />
+                        </div>
+                        <p className="text-[10px] text-amber-800">
+                          Enter "odoo-2026" to instantly initialize and activate the Administrator workspace.
+                        </p>
+                      </div>
+                    )}
+
                     <button
                       type="submit"
                       disabled={isLoading}
                       className="w-full mt-3 bg-gradient-to-r from-[#8C532B] via-[#9E6237] to-[#7B3F1B] hover:from-[#7B3F1B] hover:to-[#683416] text-white font-bold text-sm py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md shadow-[#8C532B]/20 active:scale-[0.98] cursor-pointer disabled:opacity-50"
                     >
                       {isLoading ? (
-                        <span>Submitting Registration...</span>
+                        <span>Processing Registration...</span>
                       ) : (
                         <>
-                          <span>Submit for Admin Approval</span>
+                          <span>
+                            {regRole === 'ADMIN'
+                              ? 'Create Administrator Account'
+                              : isHRRole(regRole)
+                              ? 'Submit HR for Admin Approval'
+                              : 'Create Account'}
+                          </span>
                           <ArrowRight className="h-4 w-4" />
                         </>
                       )}

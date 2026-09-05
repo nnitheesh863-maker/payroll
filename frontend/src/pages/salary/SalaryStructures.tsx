@@ -22,9 +22,10 @@ export const SalaryStructures: React.FC = () => {
     code: '',
     name: '',
     category: 'ALLOWANCE' as const,
-    rule_type: 'PERCENTAGE' as const,
+    rule_type: 'PERCENTAGE' as 'FIXED' | 'PERCENTAGE' | 'FORMULA',
     amount_or_percentage: 10,
     base_code: 'WAGE',
+    formula: '',
     sequence: 35,
     is_active: true,
   });
@@ -67,6 +68,7 @@ export const SalaryStructures: React.FC = () => {
         rule_type: 'PERCENTAGE',
         amount_or_percentage: 10,
         base_code: 'WAGE',
+        formula: '',
         sequence: 35,
         is_active: true,
       });
@@ -104,13 +106,41 @@ export const SalaryStructures: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 antialiased text-slate-800 font-sans">
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Salary Structures &amp; Computation Rules</h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Salary Structures &amp; Computation Rules</h1>
+          <p className="text-xs text-slate-500 mt-1">
             Configure dynamic compensation rules, allowances, PF, TDS and deduction calculation pipelines
+          </p>
+        </div>
+      </div>
+
+      {/* 📋 Official Computation Note Card (Matching Wireframe / Challenge Specs) */}
+      <div className="rounded-3xl bg-[#1E1B16] text-[#F5ECE0] p-6 border border-[#3E3427] shadow-lg space-y-3 font-sans">
+        <div className="flex items-center gap-2 text-amber-400">
+          <HelpCircle className="h-5 w-5" />
+          <h3 className="font-bold text-sm tracking-wide text-white">Computation Note:</h3>
+        </div>
+        <div className="space-y-2.5 text-xs text-[#EADCC9] leading-relaxed">
+          <p className="flex items-start gap-2">
+            <span className="text-amber-400 font-bold">&bull;</span>
+            <span>
+              <strong className="text-white font-bold">Fixed Amount:</strong> uses the exact value entered in the rule, e.g. Meal Allowance = 2,000.
+            </span>
+          </p>
+          <p className="flex items-start gap-2">
+            <span className="text-amber-400 font-bold">&bull;</span>
+            <span>
+              <strong className="text-white font-bold">Percentage:</strong> calculates the rule as a percentage of a selected base such as Contract Wage, Basic Salary, or Gross Salary, e.g. HRA = 20% &times; Basic Salary.
+            </span>
+          </p>
+          <p className="flex items-start gap-2">
+            <span className="text-amber-400 font-bold">&bull;</span>
+            <span>
+              <strong className="text-white font-bold">Python Code / Formula:</strong> is used for advanced calculations where fixed or percentage methods are not sufficient, such as attendance-based salary, overtime, unpaid leave deductions, or calculations using multiple salary-rule values.
+            </span>
           </p>
         </div>
       </div>
@@ -128,21 +158,21 @@ export const SalaryStructures: React.FC = () => {
               <div
                 key={st.id}
                 onClick={() => setSelectedStructure(st)}
-                className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                className={`p-4 rounded-2xl border transition-all cursor-pointer ${
                   selectedStructure?.id === st.id
-                    ? 'bg-white border-primary-500 shadow-card ring-1 ring-primary-500'
-                    : 'bg-white border-slate-200 hover:border-slate-300 shadow-soft'
+                    ? 'bg-white border-[#8C532B] shadow-md ring-2 ring-[#8C532B]/20'
+                    : 'bg-white border-slate-200 hover:border-slate-300 shadow-xs'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-slate-900 text-sm">{st.name}</span>
-                  <span className="font-mono text-[11px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
+                  <span className="font-mono text-[11px] text-[#8C532B] bg-[#FAF2E8] px-2 py-0.5 rounded-md border border-[#EADBCE]">
                     {st.code}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 mt-1 line-clamp-2">{st.description}</p>
-                <p className="text-[11px] font-medium text-primary-600 mt-2">
-                  {st.rules?.length || 0} calculation rules configured &rarr;
+                <p className="text-xs text-slate-500 mt-1.5 line-clamp-2">{st.description}</p>
+                <p className="text-[11px] font-bold text-[#8C532B] mt-2.5 flex items-center gap-1">
+                  <span>{st.rules?.length || 0} sequenced rules</span> &rarr;
                 </p>
               </div>
             ))}
@@ -152,7 +182,7 @@ export const SalaryStructures: React.FC = () => {
           <div className="lg:col-span-2">
             <Card
               title={selectedStructure?.name || 'Selected Structure Rules'}
-              subtitle={`Code: ${selectedStructure?.code} &bull; Pipeline execution sequence`}
+              subtitle={`Code: ${selectedStructure?.code} • Pipeline execution sequence`}
               action={
                 canManageSalaryRules && (
                   <Button
@@ -171,10 +201,10 @@ export const SalaryStructures: React.FC = () => {
                   selectedStructure.rules.map((rule, idx) => (
                     <div
                       key={rule.id || idx}
-                      className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between gap-4 hover:bg-slate-50 transition-colors"
+                      className="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/50 flex items-center justify-between gap-4 hover:bg-slate-50 hover:border-[#8C532B]/30 transition-all"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="h-6 w-6 rounded-full bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center shrink-0">
+                        <span className="h-7 w-7 rounded-xl bg-[#FAF2E8] text-[#8C532B] font-bold text-xs flex items-center justify-center shrink-0 border border-[#EADBCE]">
                           {rule.sequence}
                         </span>
                         <div>
@@ -189,10 +219,12 @@ export const SalaryStructures: React.FC = () => {
                               {rule.category}
                             </span>
                           </div>
-                          <p className="text-[11px] text-slate-500 mt-0.5">
+                          <p className="text-[11px] text-slate-600 mt-0.5 font-medium">
                             {rule.rule_type === 'PERCENTAGE'
                               ? `${rule.amount_or_percentage}% of ${rule.base_code || 'WAGE'}`
-                              : `Fixed ₹ ${rule.amount_or_percentage.toLocaleString()}`}
+                              : rule.rule_type === 'FORMULA'
+                              ? `Formula: ${rule.formula || 'CONTRACT_SALARY * (WORKED_HOURS / SCHEDULED_HOURS)'}`
+                              : `Fixed ₹ ${(rule.amount_or_percentage ?? (rule as any).fixed_amount ?? 0).toLocaleString()}`}
                           </p>
                         </div>
                       </div>
@@ -227,14 +259,14 @@ export const SalaryStructures: React.FC = () => {
           <div className="grid grid-cols-2 gap-3">
             <Input
               label="Rule Code"
-              placeholder="e.g. MEDICAL_ALLOW"
+              placeholder="e.g. HRA, PF_DEDUCTION"
               value={ruleForm.code}
               onChange={(e) => setRuleForm({ ...ruleForm, code: e.target.value.toUpperCase() })}
               required
             />
             <Input
               label="Rule Name"
-              placeholder="e.g. Medical Allowance"
+              placeholder="e.g. House Rent Allowance"
               value={ruleForm.name}
               onChange={(e) => setRuleForm({ ...ruleForm, name: e.target.value })}
               required
@@ -254,37 +286,73 @@ export const SalaryStructures: React.FC = () => {
               ]}
             />
             <Select
-              label="Rule Type"
+              label="Calculation Method"
               value={ruleForm.rule_type}
               onChange={(e) => setRuleForm({ ...ruleForm, rule_type: e.target.value as any })}
               options={[
-                { value: 'PERCENTAGE', label: 'Percentage (%)' },
-                { value: 'FIXED', label: 'Fixed Amount (₹)' },
+                { value: 'FIXED', label: 'Fixed Amount (e.g. Meal = 2,000)' },
+                { value: 'PERCENTAGE', label: 'Percentage (e.g. 20% of Basic)' },
+                { value: 'FORMULA', label: 'Python Code / Formula (Advanced)' },
               ]}
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          {ruleForm.rule_type === 'PERCENTAGE' && (
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                label="Percentage (%)"
+                type="number"
+                value={ruleForm.amount_or_percentage}
+                onChange={(e) => setRuleForm({ ...ruleForm, amount_or_percentage: Number(e.target.value) })}
+                required
+              />
+              <Select
+                label="Calculated On Base"
+                value={ruleForm.base_code}
+                onChange={(e) => setRuleForm({ ...ruleForm, base_code: e.target.value })}
+                options={[
+                  { value: 'WAGE', label: 'Contract Wage' },
+                  { value: 'BASIC', label: 'Basic Salary' },
+                  { value: 'GROSS', label: 'Gross Salary' },
+                ]}
+              />
+            </div>
+          )}
+
+          {ruleForm.rule_type === 'FIXED' && (
+            <div>
+              <Input
+                label="Fixed Amount (₹)"
+                type="number"
+                value={ruleForm.amount_or_percentage}
+                onChange={(e) => setRuleForm({ ...ruleForm, amount_or_percentage: Number(e.target.value) })}
+                required
+              />
+            </div>
+          )}
+
+          {ruleForm.rule_type === 'FORMULA' && (
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Python Mathematical Formula
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. CONTRACT_SALARY * (WORKED_HOURS / SCHEDULED_HOURS)"
+                value={ruleForm.formula}
+                onChange={(e) => setRuleForm({ ...ruleForm, formula: e.target.value })}
+                required
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/60 p-2.5 text-xs font-mono font-medium text-slate-900 focus:border-[#8C532B] focus:bg-white focus:outline-none"
+              />
+              <p className="text-[10px] text-slate-500 mt-1">
+                Available variables: <code className="text-[#8C532B]">CONTRACT_SALARY</code>, <code className="text-[#8C532B]">BASIC</code>, <code className="text-[#8C532B]">WORKED_HOURS</code>, <code className="text-[#8C532B]">SCHEDULED_HOURS</code>, <code className="text-[#8C532B]">UNPAID_LEAVE_DAYS</code>
+              </p>
+            </div>
+          )}
+
+          <div>
             <Input
-              label={ruleForm.rule_type === 'PERCENTAGE' ? 'Percentage Value' : 'Fixed Amount'}
-              type="number"
-              value={ruleForm.amount_or_percentage}
-              onChange={(e) => setRuleForm({ ...ruleForm, amount_or_percentage: Number(e.target.value) })}
-              required
-            />
-            <Select
-              label="Calculated On"
-              value={ruleForm.base_code}
-              onChange={(e) => setRuleForm({ ...ruleForm, base_code: e.target.value })}
-              options={[
-                { value: 'WAGE', label: 'Base Wage' },
-                { value: 'BASIC', label: 'Basic Salary' },
-                { value: 'GROSS', label: 'Gross Salary' },
-                { value: 'FIXED', label: 'Fixed Value' },
-              ]}
-            />
-            <Input
-              label="Sequence Order"
+              label="Sequence Priority Order"
               type="number"
               value={ruleForm.sequence}
               onChange={(e) => setRuleForm({ ...ruleForm, sequence: Number(e.target.value) })}

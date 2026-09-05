@@ -31,6 +31,12 @@ def create_app(config_overrides: dict | None = None) -> Flask:
     # (no business models in Phase 0 — package must exist for Alembic).
     from app import models as _models  # noqa: F401
 
+    with app.app_context():
+        try:
+            db.create_all()
+        except Exception:
+            pass
+
     # ── Blueprints ─────────────────────────────────────────────────
     from app.api.health import health_bp
     from app.api.auth import auth_bp
