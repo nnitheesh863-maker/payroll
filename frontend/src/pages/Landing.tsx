@@ -20,12 +20,9 @@ import {
   Layers,
   ArrowUpRight,
 } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
-import { Role } from '../types';
 
 export const Landing: React.FC = () => {
   const navigate = useNavigate();
-  const { quickLoginAsRole } = useAuth();
   
   // Interactive Simulator State
   const [employeeCount, setEmployeeCount] = useState<number>(150);
@@ -36,11 +33,6 @@ export const Landing: React.FC = () => {
   const taxDeductions = Math.round(grossPay * 0.142);
   const netPay = grossPay - taxDeductions;
   const hoursSaved = Math.round(employeeCount * 0.16);
-
-  const handleQuickDemo = async (role: Role) => {
-    await quickLoginAsRole(role);
-    navigate('/dashboard');
-  };
 
   const metrics = [
     { label: 'Calculation Accuracy', value: '99.99%', detail: 'Automated statutory rules' },
@@ -129,7 +121,6 @@ export const Landing: React.FC = () => {
         <div className="absolute top-[-5%] left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gradient-to-b from-[#EADCC9]/50 via-[#F5ECE0]/40 to-transparent rounded-full blur-[120px]" />
         <div className="absolute top-[25%] right-[-5%] w-[600px] h-[600px] bg-[#E2CDB6]/40 rounded-full blur-[140px]" />
         <div className="absolute top-[60%] left-[-5%] w-[600px] h-[600px] bg-[#DFCEBC]/40 rounded-full blur-[140px]" />
-        {/* Subtle dot matrix texture */}
         <div className="absolute inset-0 bg-[radial-gradient(#d8c7b5_1px,transparent_1px)] [background-size:32px_32px] opacity-30" />
       </div>
 
@@ -236,7 +227,7 @@ export const Landing: React.FC = () => {
               <CheckCircle2 className="h-4 w-4 text-[#8C532B]" /> 100% Tax &amp; Statutory Compliant
             </span>
             <span className="flex items-center gap-1.5 bg-white/85 border border-[#EADBCE] px-3 py-1 rounded-full shadow-2xs">
-              <CheckCircle2 className="h-4 w-4 text-[#8C532B]" /> Instant 1-Click Role Sandbox
+              <CheckCircle2 className="h-4 w-4 text-[#8C532B]" /> 5-Tier RBAC Architecture
             </span>
             <span className="flex items-center gap-1.5 bg-white/85 border border-[#EADBCE] px-3 py-1 rounded-full shadow-2xs">
               <CheckCircle2 className="h-4 w-4 text-[#8C532B]" /> Bank-Grade 256-Bit Encryption
@@ -245,11 +236,10 @@ export const Landing: React.FC = () => {
         </div>
 
         {/* ========================================================================= */}
-        {/* INTERACTIVE PAYROLL SIMULATOR CARD (WARM GLASS & GLOWING ACCENTS)          */}
+        {/* INTERACTIVE PAYROLL SIMULATOR CARD                                        */}
         {/* ========================================================================= */}
         <div id="simulator" className="mt-16 relative max-w-5xl mx-auto">
           
-          {/* Subtle Ambient Backlight */}
           <div className="absolute inset-0 bg-gradient-to-r from-[#EADCC9]/50 via-[#E2CDB6]/50 to-[#F5ECE0]/50 rounded-3xl blur-2xl transform -rotate-1 pointer-events-none" />
           
           <div className="relative glass-card-glow rounded-3xl p-6 sm:p-10 border border-[#EADBCE]/90 shadow-2xl overflow-hidden bg-white/92">
@@ -360,50 +350,6 @@ export const Landing: React.FC = () => {
 
             </div>
 
-            {/* 1-Click Role Sandbox Direct Jump */}
-            <div className="mt-8 pt-6 border-t border-[#EADBCE]/80 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-              <div>
-                <p className="text-xs font-black text-[#4A2810] uppercase tracking-wider flex items-center gap-1.5">
-                  <Sparkles className="h-4 w-4 text-[#8C532B]" />
-                  Test Drive Any Role with 1-Click:
-                </p>
-                <p className="text-xs text-[#735338] mt-0.5">
-                  Experience full enterprise workflows instantly without manual signup
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-2.5">
-                <button
-                  onClick={() => handleQuickDemo('ADMIN')}
-                  className="px-3.5 py-2 rounded-xl bg-[#FAF2E8] hover:bg-[#F5E8D8] border border-[#E8D5C0] text-[#78350F] text-xs font-bold cursor-pointer transition-all hover:scale-105 shadow-2xs flex items-center gap-1.5"
-                >
-                  <span className="h-2 w-2 rounded-full bg-[#8C532B]" />
-                  <span>Admin Portal</span>
-                </button>
-                <button
-                  onClick={() => handleQuickDemo('HR_MANAGER')}
-                  className="px-3.5 py-2 rounded-xl bg-[#F7EFE4] hover:bg-[#F2E4D4] border border-[#E2CEB9] text-[#8C532B] text-xs font-bold cursor-pointer transition-all hover:scale-105 shadow-2xs flex items-center gap-1.5"
-                >
-                  <span className="h-2 w-2 rounded-full bg-[#9E6237]" />
-                  <span>HR Manager</span>
-                </button>
-                <button
-                  onClick={() => handleQuickDemo('HR_PAYROLL_MANAGER')}
-                  className="px-3.5 py-2 rounded-xl bg-[#F3EFEA] hover:bg-[#EAE4DC] border border-[#DDD0C2] text-[#633B1C] text-xs font-bold cursor-pointer transition-all hover:scale-105 shadow-2xs flex items-center gap-1.5"
-                >
-                  <span className="h-2 w-2 rounded-full bg-[#7B3F1B]" />
-                  <span>Payroll Exec</span>
-                </button>
-                <button
-                  onClick={() => handleQuickDemo('EMPLOYEE')}
-                  className="px-3.5 py-2 rounded-xl bg-[#FDFBF7] hover:bg-[#F8F2E8] border border-[#EADBCE] text-[#573A25] text-xs font-bold cursor-pointer transition-all hover:scale-105 shadow-2xs flex items-center gap-1.5"
-                >
-                  <span className="h-2 w-2 rounded-full bg-[#A87B56]" />
-                  <span>Employee Portal</span>
-                </button>
-              </div>
-            </div>
-
           </div>
         </div>
       </section>
@@ -465,7 +411,7 @@ export const Landing: React.FC = () => {
         </div>
       </section>
 
-      {/* How It Works / 3-Step Interactive Workflow */}
+      {/* How It Works */}
       <section id="workflow" className="py-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto relative z-10">
         <div className="bg-gradient-to-b from-[#F5ECE0]/80 to-[#FAF7F2] border border-[#EADBCE] rounded-3xl p-8 sm:p-12 shadow-md">
           <div className="text-center max-w-2xl mx-auto mb-12">
@@ -509,7 +455,6 @@ export const Landing: React.FC = () => {
       <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto relative z-10">
         <div className="bg-gradient-to-r from-[#7B3F1B] via-[#8F4E24] to-[#B36F3D] rounded-3xl p-8 sm:p-14 text-center text-white relative overflow-hidden shadow-2xl shadow-[#8C532B]/20">
           
-          {/* Decorative glow elements inside CTA */}
           <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute bottom-0 right-0 w-64 h-64 bg-[#FDE68A]/20 rounded-full blur-3xl pointer-events-none" />
 
@@ -524,7 +469,7 @@ export const Landing: React.FC = () => {
               onClick={() => navigate('/register')}
               className="w-full sm:w-auto bg-white hover:bg-[#FAF7F2] text-[#633B1C] font-extrabold text-sm px-8 py-4 rounded-xl shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
             >
-              <span>Create Free Workspace</span>
+              <span>Create Workspace</span>
               <ArrowUpRight className="h-4 w-4 text-[#8C532B]" />
             </button>
             <button

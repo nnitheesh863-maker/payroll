@@ -1,32 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
   Users,
   DollarSign,
   UserCheck,
   CalendarOff,
-  TrendingUp,
   AlertCircle,
   ArrowRight,
-  Clock,
-  PlusCircle,
   CheckCircle2,
-  Shield,
-  Sparkles,
-  Check,
-  X,
-  Layers,
-  FileCheck,
-  Building2,
-  ChevronRight,
-  Calendar,
-  Activity,
-  Briefcase,
-  ArrowUpRight,
-  Play,
-  FileText,
   Calculator,
   Receipt,
+  Building2,
+  Calendar,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -41,31 +26,14 @@ import {
   Legend,
 } from 'recharts';
 import { dashboardApi } from '../services/dashboard.api';
-import { DashboardMetrics, Role } from '../types';
-import { Card } from '../components/common/Card';
-import { Button } from '../components/common/Button';
+import { DashboardMetrics } from '../types';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { useAuth } from '../hooks/useAuth';
-import { usePermission } from '../hooks/usePermission';
 
 export const Dashboard: React.FC = () => {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSwitchingRole, setIsSwitchingRole] = useState(false);
-  const { user, quickLoginAsRole } = useAuth();
-  const navigate = useNavigate();
-  const {
-    isEmployee,
-    isHRManager,
-    isPayrollUser,
-    isPayrollManager,
-    isAdmin,
-    canCreatePayrun,
-    canValidatePayrun,
-    canApproveLeaves,
-    canManageEmployees,
-    canManageUsers,
-  } = usePermission();
+  const { user } = useAuth();
 
   const fetchDashboard = async () => {
     try {
@@ -81,81 +49,6 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     fetchDashboard();
   }, [user]);
-
-  const handleRoleSwitch = async (role: Role) => {
-    if (user?.role === role) return;
-    setIsSwitchingRole(true);
-    try {
-      await quickLoginAsRole(role);
-      await fetchDashboard();
-    } catch (err) {
-      console.error('Role switch failed:', err);
-    } finally {
-      setIsSwitchingRole(false);
-    }
-  };
-
-  const roleConfigs: {
-    role: Role;
-    title: string;
-    person: string;
-    desc: string;
-    color: string;
-    activeBorder: string;
-    badge: string;
-    dotColor: string;
-  }[] = [
-    {
-      role: 'ADMIN',
-      title: 'Admin',
-      person: 'System Administrator',
-      desc: 'Universal control, security policies, full access',
-      color: 'hover:border-[#E8D5C0] hover:bg-[#FAF2E8]/60',
-      activeBorder: 'border-[#8C532B] bg-[#FAF2E8] ring-2 ring-[#8C532B]/30',
-      badge: 'bg-[#8C532B] text-white',
-      dotColor: 'bg-[#8C532B]',
-    },
-    {
-      role: 'HR_MANAGER',
-      title: 'HR Manager',
-      person: 'Sara Khan',
-      desc: 'Employees 360°, contracts, leave approvals',
-      color: 'hover:border-[#E2CEB9] hover:bg-[#F7EFE4]/60',
-      activeBorder: 'border-[#9E6237] bg-[#F7EFE4] ring-2 ring-[#9E6237]/30',
-      badge: 'bg-[#9E6237] text-white',
-      dotColor: 'bg-[#9E6237]',
-    },
-    {
-      role: 'HR_PAYROLL_MANAGER',
-      title: 'Payroll Manager',
-      person: 'Rajesh Sharma',
-      desc: 'Validate payruns, disburse salaries, export PDFs',
-      color: 'hover:border-[#DDD0C2] hover:bg-[#F3EFEA]/60',
-      activeBorder: 'border-[#7B3F1B] bg-[#F3EFEA] ring-2 ring-[#7B3F1B]/30',
-      badge: 'bg-[#7B3F1B] text-white',
-      dotColor: 'bg-[#7B3F1B]',
-    },
-    {
-      role: 'HR_PAYROLL_USER',
-      title: 'Payroll Specialist',
-      person: 'Priya Varma',
-      desc: 'Salary structures, batch calculation engine',
-      color: 'hover:border-[#EADCC9] hover:bg-[#FAF5EE]/60',
-      activeBorder: 'border-[#B87B4C] bg-[#FAF5EE] ring-2 ring-[#B87B4C]/30',
-      badge: 'bg-[#B87B4C] text-white',
-      dotColor: 'bg-[#B87B4C]',
-    },
-    {
-      role: 'EMPLOYEE',
-      title: 'Employee',
-      person: 'Aarav Mehta',
-      desc: 'Self-service portal, clock-in, view payslips',
-      color: 'hover:border-[#EADBCE] hover:bg-[#FDFBF7]',
-      activeBorder: 'border-[#A87B56] bg-[#FDFBF7] ring-2 ring-[#A87B56]/30',
-      badge: 'bg-[#A87B56] text-white',
-      dotColor: 'bg-[#A87B56]',
-    },
-  ];
 
   if (isLoading) {
     return <LoadingSpinner text="Loading PeoplePay360 dashboard..." />;
@@ -205,99 +98,30 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="space-y-6 antialiased font-sans text-slate-800 pb-8">
       
-      {/* 🌟 Top Interactive RBAC Persona & Role Switcher Banner */}
+      {/* 🌟 Professional Executive Welcome Header Banner */}
       <div className="bg-white rounded-3xl border border-[#EADBCE] p-6 shadow-xs relative overflow-hidden">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-[#8C532B]" />
-              <h2 className="text-base sm:text-lg font-black text-[#381E0D] tracking-tight">
-                Role-Based Access Control (RBAC) Dashboard
+            <div className="flex items-center gap-2 mb-1">
+              <Building2 className="h-5 w-5 text-[#8C532B]" />
+              <h2 className="text-xl font-black text-[#381E0D] tracking-tight">
+                Welcome back, {user?.full_name || 'Administrator'}
               </h2>
-              <span className="text-[10px] font-bold bg-[#F0FDF4] text-[#15803D] border border-[#BBF7D0] px-2.5 py-0.5 rounded-full">
-                Active Policy: Role-Specific
-              </span>
             </div>
-            <p className="text-xs text-[#735338] font-medium mt-1">
-              Showing entities &amp; actions allowed for <span className="font-bold text-[#381E0D]">{user?.full_name}</span>. Click any role below to switch personas.
+            <p className="text-xs text-[#735338] font-medium">
+              Enterprise Payroll &amp; Workforce Operations Hub • <span className="font-bold text-[#8C532B]">{user?.role?.replace(/_/g, ' ')}</span>
             </p>
           </div>
-          {isSwitchingRole && (
-            <span className="text-xs font-bold text-[#8C532B] flex items-center gap-1.5 animate-pulse self-start lg:self-auto">
-              <span className="h-2 w-2 rounded-full bg-[#8C532B]" /> Switching Role Persona...
-            </span>
-          )}
-        </div>
 
-        {/* 5 Interactive Role Persona Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          {roleConfigs.map((rc) => {
-            const isActive = user?.role === rc.role;
-            return (
-              <button
-                key={rc.role}
-                onClick={() => handleRoleSwitch(rc.role)}
-                disabled={isSwitchingRole}
-                className={`p-3.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between ${
-                  isActive
-                    ? rc.activeBorder
-                    : `bg-white border-[#EADBCE] ${rc.color} shadow-2xs hover:scale-[1.01]`
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className={`h-2 w-2 rounded-full ${rc.dotColor}`} />
-                      <span className="font-bold text-xs text-[#381E0D]">{rc.title}</span>
-                    </div>
-                    {isActive ? (
-                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${rc.badge}`}>
-                        Active
-                      </span>
-                    ) : (
-                      <span className="text-[9px] text-[#8C532B]/60 font-semibold">Test</span>
-                    )}
-                  </div>
-                  <p className="text-xs font-bold text-[#4A2810]">{rc.person}</p>
-                  <p className="text-[11px] text-[#735338] mt-1 leading-snug line-clamp-2">
-                    {rc.desc}
-                  </p>
-                </div>
-
-                <div className="mt-3 pt-2 border-t border-[#EADBCE]/60 flex items-center justify-between text-[10px]">
-                  <span className="font-mono text-[#8C532B]/60 font-bold">{rc.role}</span>
-                  {isActive && <CheckCircle2 className="h-3.5 w-3.5 text-[#15803D]" />}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Permissions Strip */}
-        <div className="mt-4 pt-3 border-t border-[#EADBCE]/60 flex flex-wrap items-center justify-between gap-3 text-xs bg-[#FAF7F2] p-3 rounded-2xl border border-[#EADBCE]">
-          <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-[#8C532B] shrink-0" />
-            <span className="font-bold text-[#381E0D]">
-              Active Persona: <span className="text-[#8C532B]">{user?.full_name}</span> ({user?.role?.replace(/_/g, ' ')})
+          <div className="flex items-center gap-3 self-start sm:self-auto">
+            <span className="text-xs font-bold text-[#15803D] bg-[#F0FDF4] border border-[#BBF7D0] px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-2xs">
+              <span className="h-2 w-2 rounded-full bg-[#15803D] animate-pulse" />
+              System Operational
             </span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 text-[11px] font-bold">
-            <span className={`inline-flex items-center gap-1 ${canManageEmployees ? 'text-[#15803D]' : 'text-slate-400 line-through'}`}>
-              {canManageEmployees ? <Check className="h-3.5 w-3.5 text-[#15803D]" /> : <X className="h-3.5 w-3.5 text-slate-400" />} Employee Hub
-            </span>
-            <span className={`inline-flex items-center gap-1 ${canApproveLeaves ? 'text-[#15803D]' : 'text-slate-400 line-through'}`}>
-              {canApproveLeaves ? <Check className="h-3.5 w-3.5 text-[#15803D]" /> : <X className="h-3.5 w-3.5 text-slate-400" />} Approve Leaves
-            </span>
-            <span className={`inline-flex items-center gap-1 ${canCreatePayrun ? 'text-[#15803D]' : 'text-slate-400 line-through'}`}>
-              {canCreatePayrun ? <Check className="h-3.5 w-3.5 text-[#15803D]" /> : <X className="h-3.5 w-3.5 text-slate-400" />} Compute Payroll
-            </span>
-            <span className={`inline-flex items-center gap-1 ${canValidatePayrun ? 'text-[#15803D]' : 'text-slate-400 line-through'}`}>
-              {canValidatePayrun ? <Check className="h-3.5 w-3.5 text-[#15803D]" /> : <X className="h-3.5 w-3.5 text-slate-400" />} Validate Payruns
-            </span>
-            <span className={`inline-flex items-center gap-1 ${canManageUsers ? 'text-[#15803D]' : 'text-slate-400 line-through'}`}>
-              {canManageUsers ? <Check className="h-3.5 w-3.5 text-[#15803D]" /> : <X className="h-3.5 w-3.5 text-slate-400" />} User Management
-            </span>
+            <div className="text-xs font-semibold text-[#735338] bg-[#FAF7F2] border border-[#EADBCE] px-3 py-1.5 rounded-xl flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5 text-[#8C532B]" />
+              <span>{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+            </div>
           </div>
         </div>
       </div>

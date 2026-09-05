@@ -16,8 +16,6 @@ import {
   EyeOff,
   Briefcase,
   ChevronRight,
-  Zap,
-  Star,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { Role } from '../../types';
@@ -38,8 +36,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => 
   }, [location.pathname, initialMode]);
 
   // Login Form States
-  const [loginEmail, setLoginEmail] = useState('admin@peoplepay360.com');
-  const [loginPassword, setLoginPassword] = useState('Admin@123');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   // Register Form States
@@ -56,7 +54,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => 
   const [isLoading, setIsLoading] = useState(false);
   const [showForgotModal, setShowForgotModal] = useState(false);
 
-  const { login, register, quickLoginAsRole } = useAuth();
+  const { login, register } = useAuth();
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +77,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => 
     setError(null);
     setIsLoading(true);
     try {
-      await register(regFullName || 'Administrator', regEmail, regRole);
+      await register(regFullName || 'Administrator', regEmail, regRole, regPassword);
       setSuccessMsg('Workspace created successfully! Redirecting...');
       setTimeout(() => {
         navigate('/dashboard');
@@ -91,58 +89,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => 
     }
   };
 
-  const handleRoleQuickLogin = async (role: Role, roleEmail: string, rolePass: string) => {
-    setLoginEmail(roleEmail);
-    setLoginPassword(rolePass);
-    setError(null);
-    setIsLoading(true);
-    try {
-      await quickLoginAsRole(role);
-      navigate('/dashboard');
-    } catch {
-      navigate('/dashboard');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const toggleAuthMode = (targetSignUp: boolean) => {
     setError(null);
     setSuccessMsg(null);
     setIsSignUp(targetSignUp);
     navigate(targetSignUp ? '/register' : '/login');
   };
-
-  const demoRoles = [
-    {
-      role: 'ADMIN' as Role,
-      label: 'Admin',
-      email: 'admin@peoplepay360.com',
-      pass: 'Admin@123',
-      color: 'bg-[#FAF2E8] hover:bg-[#F5E8D8] text-[#78350F] border-[#E8D5C0]',
-    },
-    {
-      role: 'HR_MANAGER' as Role,
-      label: 'HR Manager',
-      email: 'hrmanager@peoplepay360.com',
-      pass: 'HrManager@123',
-      color: 'bg-[#F7EFE4] hover:bg-[#F2E4D4] text-[#8C532B] border-[#E2CEB9]',
-    },
-    {
-      role: 'HR_PAYROLL_MANAGER' as Role,
-      label: 'Payroll Manager',
-      email: 'payrollmanager@peoplepay360.com',
-      pass: 'PayrollManager@123',
-      color: 'bg-[#F3EFEA] hover:bg-[#EAE4DC] text-[#633B1C] border-[#DDD0C2]',
-    },
-    {
-      role: 'EMPLOYEE' as Role,
-      label: 'Employee',
-      email: 'employee@peoplepay360.com',
-      pass: 'Employee@123',
-      color: 'bg-[#FDFBF7] hover:bg-[#F8F2E8] text-[#573A25] border-[#EADBCE]',
-    },
-  ];
 
   return (
     <div className="min-h-screen w-full bg-[#FAF7F2] flex flex-col justify-between selection:bg-[#EADCC9] selection:text-[#78350F] relative font-sans text-slate-800 antialiased overflow-x-hidden">
@@ -181,7 +133,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => 
 
       {/* Main Glassmorphic Auth Card */}
       <main className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-        <div className="w-full max-w-5xl glass-card rounded-3xl border border-[#EADBCE]/90 shadow-[0_20px_50px_rgba(120,53,15,0.06)] overflow-hidden relative min-h-[580px] flex flex-col lg:flex-row bg-white/95">
+        <div className="w-full max-w-5xl glass-card rounded-3xl border border-[#EADBCE]/90 shadow-[0_20px_50px_rgba(120,53,15,0.06)] overflow-hidden relative min-h-[540px] flex flex-col lg:flex-row bg-white/95">
 
           {/* ========================================================================= */}
           {/* PANEL 1: SIGN IN (LEFT)                                                   */}
@@ -225,7 +177,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => 
                     </div>
                     <input
                       type="email"
-                      placeholder="admin@peoplepay360.com"
+                      placeholder="user@company.com"
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
                       required
@@ -284,26 +236,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => 
                   )}
                 </button>
               </form>
-
-              {/* 1-Click Sandbox Fast Login */}
-              <div className="mt-6 pt-5 border-t border-[#EADBCE]/80">
-                <p className="text-[11px] font-bold text-[#6E492B] uppercase tracking-wider flex items-center gap-1.5 mb-2.5">
-                  <Zap className="h-3 w-3 text-[#B45309]" />
-                  Instant Role Sandbox:
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {demoRoles.map((r) => (
-                    <button
-                      key={r.role}
-                      type="button"
-                      onClick={() => handleRoleQuickLogin(r.role, r.email, r.pass)}
-                      className={`py-2 px-2.5 rounded-lg border text-xs font-bold text-left truncate cursor-pointer hover:scale-[1.02] active:scale-95 transition-all ${r.color}`}
-                    >
-                      {r.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
 
             {/* Mobile Switcher */}
@@ -472,7 +404,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => 
                     <span>Creating Workspace...</span>
                   ) : (
                     <>
-                      <span>Create Free Workspace</span>
+                      <span>Create Workspace</span>
                       <ArrowRight className="h-4 w-4" />
                     </>
                   )}
@@ -496,7 +428,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => 
           </div>
 
           {/* ========================================================================= */}
-          {/* SLIDING DECORATIVE OVERLAY (SANDALWOOD & TEA THEMED)                      */}
+          {/* SLIDING DECORATIVE OVERLAY                                                */}
           {/* ========================================================================= */}
           <div
             className={`hidden lg:flex absolute top-0 bottom-0 w-1/2 p-10 xl:p-12 flex-col justify-between text-white z-20 shadow-2xl transition-all duration-500 ease-in-out ${
@@ -518,7 +450,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'login' }) => 
               </span>
             </div>
 
-            {/* Dynamic Center Highlight */}
+            {/* Center Highlight */}
             <div className="space-y-4">
               {!isSignUp ? (
                 <div className="space-y-4">

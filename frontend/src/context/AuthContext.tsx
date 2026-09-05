@@ -9,18 +9,9 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, role?: Role, password?: string) => Promise<void>;
-  quickLoginAsRole: (role: Role) => Promise<void>;
   logout: () => void;
   hasRole: (roles: Role | Role[]) => boolean;
 }
-
-const roleCredentials: Record<Role, { email: string; pass: string; name: string }> = {
-  ADMIN: { email: 'admin@peoplepay360.com', pass: 'Admin@123', name: 'Alexander Wright (Admin)' },
-  HR_MANAGER: { email: 'hrmanager@peoplepay360.com', pass: 'HrManager@123', name: 'Sarah Jenkins (HR Mgr)' },
-  HR_PAYROLL_MANAGER: { email: 'payrollmanager@peoplepay360.com', pass: 'PayrollManager@123', name: 'Marcus Chen (Payroll Mgr)' },
-  HR_PAYROLL_USER: { email: 'payrolluser@peoplepay360.com', pass: 'PayrollUser@123', name: 'Elena Rostova (Payroll Spec)' },
-  EMPLOYEE: { email: 'employee@peoplepay360.com', pass: 'Employee@123', name: 'David Kumar (Software Eng)' },
-};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -68,7 +59,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.removeItem('peoplepay_user');
       setToken(null);
       setUser(null);
-      // Re-throw so Login form can display exact invalid credentials error
       throw err;
     } finally {
       setIsLoading(false);
@@ -88,13 +78,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       throw err;
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const quickLoginAsRole = async (role: Role) => {
-    const cred = roleCredentials[role];
-    if (cred) {
-      await login(cred.email, cred.pass);
     }
   };
 
@@ -124,7 +107,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isLoading,
         login,
         register,
-        quickLoginAsRole,
         logout,
         hasRole,
       }}

@@ -34,11 +34,11 @@ export const pdfReports = {
     doc.rect(0, 0, 210, 4, 'F');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
+    doc.setFontSize(15);
     doc.setTextColor(...SECONDARY_COLOR);
     doc.text('PeoplePay360 — Enterprise HR & Payroll ERP', 14, 16);
 
-    doc.setFontSize(11);
+    doc.setFontSize(10.5);
     doc.setTextColor(...PRIMARY_COLOR);
     doc.text(`CONFIDENTIAL SALARY PAYSLIP — ${slipNo}`, 14, 25);
 
@@ -52,31 +52,31 @@ export const pdfReports = {
     doc.setDrawColor(220, 210, 200);
     doc.roundedRect(14, 42, 182, 32, 2, 2, 'FD');
 
-    doc.setFontSize(8.5);
+    doc.setFontSize(8);
     doc.setTextColor(120, 120, 120);
     doc.text('EMPLOYEE NAME', 20, 50);
     doc.text('EMPLOYEE ID', 95, 50);
     doc.text('DEPARTMENT', 150, 50);
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
+    doc.setFontSize(10.5);
     doc.setTextColor(...SECONDARY_COLOR);
     doc.text(name, 20, 57);
     doc.text(code, 95, 57);
     doc.text(dept, 150, 57);
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
+    doc.setFontSize(8);
     doc.setTextColor(120, 120, 120);
     doc.text('DESIGNATION', 20, 66);
     doc.text('PAY STRUCTURE', 95, 66);
     doc.text('STATUS', 150, 66);
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
+    doc.setFontSize(9.5);
     doc.setTextColor(...SECONDARY_COLOR);
     doc.text(desig, 20, 72);
-    doc.text('Regular Salary (US/IN)', 95, 72);
+    doc.text('Regular Salary (Corporate)', 95, 72);
     doc.setTextColor(...ACCENT_GREEN);
     doc.text(p.status || 'VALIDATED / PAID', 150, 72);
 
@@ -101,8 +101,8 @@ export const pdfReports = {
       head: [['Earnings & Allowances', 'Amount']],
       body: earningsData,
       theme: 'grid',
-      headStyles: { fillColor: PRIMARY_COLOR, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9 },
-      bodyStyles: { fontSize: 8.5 },
+      headStyles: { fillColor: PRIMARY_COLOR, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
+      bodyStyles: { fontSize: 8 },
       columnStyles: { 1: { halign: 'right', fontStyle: 'bold' } },
     });
 
@@ -112,8 +112,8 @@ export const pdfReports = {
       head: [['Statutory Deductions', 'Amount']],
       body: deductionsData,
       theme: 'grid',
-      headStyles: { fillColor: ACCENT_RED, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9 },
-      bodyStyles: { fontSize: 8.5 },
+      headStyles: { fillColor: ACCENT_RED, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
+      bodyStyles: { fontSize: 8 },
       columnStyles: { 1: { halign: 'right', fontStyle: 'bold', textColor: ACCENT_RED } },
     });
 
@@ -124,7 +124,7 @@ export const pdfReports = {
     doc.roundedRect(14, finalY, 182, 24, 2, 2, 'FD');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
+    doc.setFontSize(9.5);
     doc.setTextColor(...PRIMARY_COLOR);
     doc.text('NET SALARY PAYABLE (DIRECT BANK TRANSFER)', 22, finalY + 10);
     doc.setFont('helvetica', 'normal');
@@ -133,7 +133,7 @@ export const pdfReports = {
     doc.text('Disbursed via automated bank clearing system', 22, finalY + 18);
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
+    doc.setFontSize(15);
     doc.setTextColor(...ACCENT_GREEN);
     doc.text(`Rs. ${net.toLocaleString()}`, 145, finalY + 15);
 
@@ -155,62 +155,69 @@ export const pdfReports = {
   exportMonthlyPayrollMaster: (payrunName = 'September 2026 Regular Payrun') => {
     const doc = new jsPDF('landscape');
 
+    // Header Banner
     doc.setFillColor(...BG_TINT);
-    doc.rect(0, 0, 297, 30, 'F');
+    doc.rect(0, 0, 297, 28, 'F');
     doc.setFillColor(...PRIMARY_COLOR);
-    doc.rect(0, 0, 297, 4, 'F');
+    doc.rect(0, 0, 297, 3.5, 'F');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
+    doc.setFontSize(15);
     doc.setTextColor(...SECONDARY_COLOR);
-    doc.text('PeoplePay360 — Enterprise HR & Payroll ERP', 14, 15);
+    doc.text('PeoplePay360 — Enterprise HR & Payroll ERP', 14, 14);
 
-    doc.setFontSize(11);
+    doc.setFontSize(10.5);
     doc.setTextColor(...PRIMARY_COLOR);
-    doc.text(`Monthly Payroll Master Summary — ${payrunName}`, 14, 23);
+    doc.text(`Monthly Payroll Master Summary — ${payrunName}`, 14, 22);
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
+    doc.setFontSize(8.5);
     doc.setTextColor(100, 100, 100);
-    doc.text(`Generated: ${new Date().toLocaleDateString()} | Currency: INR (₹)`, 220, 23);
+    doc.text(`Generated: ${new Date().toLocaleDateString()} | Currency: INR (Rs.)`, 215, 22);
 
+    // 4 Top KPI Cards (proper width & spacing)
+    const cardW = 63;
+    const cardH = 17;
+    const cardY = 32;
     doc.setFillColor(255, 255, 255);
     doc.setDrawColor(220, 210, 200);
-    doc.roundedRect(14, 35, 62, 18, 2, 2, 'FD');
-    doc.roundedRect(82, 35, 62, 18, 2, 2, 'FD');
-    doc.roundedRect(150, 35, 62, 18, 2, 2, 'FD');
-    doc.roundedRect(218, 35, 65, 18, 2, 2, 'FD');
 
-    doc.setFontSize(8);
+    doc.roundedRect(14, cardY, cardW, cardH, 2, 2, 'FD');
+    doc.roundedRect(82, cardY, cardW, cardH, 2, 2, 'FD');
+    doc.roundedRect(150, cardY, cardW, cardH, 2, 2, 'FD');
+    doc.roundedRect(218, cardY, cardW + 3, cardH, 2, 2, 'FD');
+
+    doc.setFontSize(7.5);
     doc.setTextColor(120, 120, 120);
-    doc.text('TOTAL EMPLOYEES', 18, 41);
-    doc.text('GROSS PAYROLL', 86, 41);
-    doc.text('TOTAL DEDUCTIONS', 154, 41);
-    doc.text('NET DISBURSED', 222, 41);
+    doc.text('TOTAL EMPLOYEES', 18, cardY + 5.5);
+    doc.text('GROSS PAYROLL', 86, cardY + 5.5);
+    doc.text('TOTAL DEDUCTIONS', 154, cardY + 5.5);
+    doc.text('NET DISBURSED', 222, cardY + 5.5);
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
+    doc.setFontSize(11);
     doc.setTextColor(...SECONDARY_COLOR);
-    doc.text('48 On Roll', 18, 49);
-    doc.text('₹ 4,82,950', 86, 49);
+    doc.text('48 On Roll', 18, cardY + 13);
+    doc.text('Rs. 4,82,950', 86, cardY + 13);
     doc.setTextColor(...ACCENT_RED);
-    doc.text('₹ 68,410', 154, 49);
+    doc.text('Rs. 68,410', 154, cardY + 13);
     doc.setTextColor(...ACCENT_GREEN);
-    doc.text('₹ 4,14,540', 222, 49);
+    doc.text('Rs. 4,14,540', 222, cardY + 13);
 
     const tableData = [
-      ['EMP-001', 'Aarav Mehta', 'Finance', 'Sr. Analyst', '30d', '₹ 65,000', '₹ 26,000', '₹ 1,05,000', '₹ 7,800', '₹ 6,900', '₹ 14,700', '₹ 90,300'],
-      ['EMP-002', 'Sara Khan', 'HR & Admin', 'HR Lead', '30d', '₹ 55,000', '₹ 22,000', '₹ 90,000', '₹ 6,600', '₹ 6,000', '₹ 12,600', '₹ 77,400'],
-      ['EMP-003', 'Anil Patel', 'Engineering', 'Full Stack Dev', '30d', '₹ 55,000', '₹ 22,000', '₹ 90,000', '₹ 6,600', '₹ 6,000', '₹ 12,600', '₹ 77,400'],
-      ['EMP-004', 'Anita Oliver', 'Finance', 'Accountant', '30d', '₹ 45,000', '₹ 18,000', '₹ 75,000', '₹ 5,400', '₹ 4,500', '₹ 9,900', '₹ 65,100'],
-      ['EMP-005', 'Audrey Peterson', 'HR & Admin', 'Coordinator', '30d', '₹ 40,000', '₹ 16,000', '₹ 68,000', '₹ 4,800', '₹ 3,900', '₹ 8,700', '₹ 59,300'],
-      ['EMP-006', 'Billy Kyle', 'Engineering', 'Jr. Engineer', '30d', '₹ 35,000', '₹ 14,000', '₹ 54,950', '₹ 4,200', '₹ 2,750', '₹ 6,950', '₹ 48,000'],
-      ['EMP-007', 'Eli Lambert', 'Design', 'Sr. Designer', '30d', '₹ 50,000', '₹ 20,000', '₹ 82,000', '₹ 6,000', '₹ 5,100', '₹ 11,100', '₹ 70,900'],
-      ['EMP-008', 'Paul Williams', 'Engineering', 'DevOps Eng', '30d', '₹ 48,000', '₹ 19,200', '₹ 78,000', '₹ 5,760', '₹ 4,800', '₹ 10,560', '₹ 67,440'],
+      ['EMP-001', 'Aarav Mehta', 'Finance', 'Sr. Analyst', '30d', 'Rs. 65,000', 'Rs. 26,000', 'Rs. 1,05,000', 'Rs. 7,800', 'Rs. 6,900', 'Rs. 14,700', 'Rs. 90,300'],
+      ['EMP-002', 'Sara Khan', 'HR & Admin', 'HR Lead', '30d', 'Rs. 55,000', 'Rs. 22,000', 'Rs. 90,000', 'Rs. 6,600', 'Rs. 6,000', 'Rs. 12,600', 'Rs. 77,400'],
+      ['EMP-003', 'Anil Patel', 'Engineering', 'Full Stack Dev', '30d', 'Rs. 55,000', 'Rs. 22,000', 'Rs. 90,000', 'Rs. 6,600', 'Rs. 6,000', 'Rs. 12,600', 'Rs. 77,400'],
+      ['EMP-004', 'Anita Oliver', 'Finance', 'Accountant', '30d', 'Rs. 45,000', 'Rs. 18,000', 'Rs. 75,000', 'Rs. 5,400', 'Rs. 4,500', 'Rs. 9,900', 'Rs. 65,100'],
+      ['EMP-005', 'Audrey Peterson', 'HR & Admin', 'Coordinator', '30d', 'Rs. 40,000', 'Rs. 16,000', 'Rs. 68,000', 'Rs. 4,800', 'Rs. 3,900', 'Rs. 8,700', 'Rs. 59,300'],
+      ['EMP-006', 'Billy Kyle', 'Engineering', 'Jr. Engineer', '30d', 'Rs. 35,000', 'Rs. 14,000', 'Rs. 54,950', 'Rs. 4,200', 'Rs. 2,750', 'Rs. 6,950', 'Rs. 48,000'],
+      ['EMP-007', 'Eli Lambert', 'Design', 'Sr. Designer', '30d', 'Rs. 50,000', 'Rs. 20,000', 'Rs. 82,000', 'Rs. 6,000', 'Rs. 5,100', 'Rs. 11,100', 'Rs. 70,900'],
+      ['EMP-008', 'Paul Williams', 'Engineering', 'DevOps Eng', '30d', 'Rs. 48,000', 'Rs. 19,200', 'Rs. 78,000', 'Rs. 5,760', 'Rs. 4,800', 'Rs. 10,560', 'Rs. 67,440'],
     ];
 
     autoTable(doc, {
-      startY: 58,
+      startY: 54,
+      margin: { left: 14, right: 14 },
       head: [['Code', 'Employee', 'Department', 'Designation', 'Worked', 'Basic', 'HRA', 'Gross Salary', 'PF (12%)', 'TDS', 'Total Ded.', 'Net Pay']],
       body: tableData,
       theme: 'grid',
@@ -218,23 +225,28 @@ export const pdfReports = {
         fillColor: PRIMARY_COLOR,
         textColor: [255, 255, 255],
         fontStyle: 'bold',
-        fontSize: 8,
+        fontSize: 7.5,
         halign: 'center',
+        cellPadding: 2,
       },
       bodyStyles: {
-        fontSize: 8,
+        fontSize: 7.5,
         textColor: [50, 50, 50],
+        cellPadding: 2,
       },
       columnStyles: {
-        0: { halign: 'center' },
-        4: { halign: 'center' },
-        5: { halign: 'right' },
-        6: { halign: 'right' },
-        7: { halign: 'right', fontStyle: 'bold' },
-        8: { halign: 'right' },
-        9: { halign: 'right' },
-        10: { halign: 'right', textColor: ACCENT_RED },
-        11: { halign: 'right', fontStyle: 'bold', textColor: ACCENT_GREEN },
+        0: { cellWidth: 17, halign: 'center' },
+        1: { cellWidth: 28, halign: 'left', fontStyle: 'bold' },
+        2: { cellWidth: 22, halign: 'left' },
+        3: { cellWidth: 25, halign: 'left' },
+        4: { cellWidth: 14, halign: 'center' },
+        5: { cellWidth: 22, halign: 'right' },
+        6: { cellWidth: 20, halign: 'right' },
+        7: { cellWidth: 25, halign: 'right', fontStyle: 'bold' },
+        8: { cellWidth: 20, halign: 'right' },
+        9: { cellWidth: 18, halign: 'right' },
+        10: { cellWidth: 23, halign: 'right', textColor: ACCENT_RED },
+        11: { cellWidth: 25, halign: 'right', fontStyle: 'bold', textColor: ACCENT_GREEN },
       },
       alternateRowStyles: {
         fillColor: [252, 250, 247],
@@ -246,7 +258,7 @@ export const pdfReports = {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setTextColor(140, 140, 140);
-      doc.text('PeoplePay360 &copy; Statutory Compliance Engine | Confidential Document', 14, 200);
+      doc.text('PeoplePay360 — Statutory Compliance Engine | Confidential Document', 14, 200);
       doc.text(`Page ${i} of ${pageCount}`, 265, 200);
     }
 
@@ -258,38 +270,39 @@ export const pdfReports = {
     const doc = new jsPDF('landscape');
 
     doc.setFillColor(...BG_TINT);
-    doc.rect(0, 0, 297, 30, 'F');
+    doc.rect(0, 0, 297, 28, 'F');
     doc.setFillColor(...PRIMARY_COLOR);
-    doc.rect(0, 0, 297, 4, 'F');
+    doc.rect(0, 0, 297, 3.5, 'F');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
+    doc.setFontSize(15);
     doc.setTextColor(...SECONDARY_COLOR);
-    doc.text('PeoplePay360 — Statutory Compliance & PF/ESI Ledger', 14, 15);
+    doc.text('PeoplePay360 — Statutory Compliance & PF/ESI Ledger', 14, 14);
 
-    doc.setFontSize(10);
+    doc.setFontSize(9.5);
     doc.setTextColor(...PRIMARY_COLOR);
-    doc.text('Government ECR Electronic Challan Return Schedule (Form 5 / 10 / 12A)', 14, 23);
+    doc.text('Government ECR Electronic Challan Return Schedule (Form 5 / 10 / 12A)', 14, 22);
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
+    doc.setFontSize(8.5);
     doc.setTextColor(100, 100, 100);
-    doc.text(`Establishment ID: MH/BAN/0094821 | Period: Sep 2026`, 200, 23);
+    doc.text('Establishment ID: MH/BAN/0094821 | Period: Sep 2026', 195, 22);
 
     const tableData = [
-      ['100192847291', 'EMP-001', 'Aarav Mehta', '₹ 65,000', '₹ 15,000', '₹ 1,800', '₹ 1,250', '₹ 550', '₹ 75', '₹ 75', '₹ 3,750', 'Exempt'],
-      ['100192847292', 'EMP-002', 'Sara Khan', '₹ 55,000', '₹ 15,000', '₹ 1,800', '₹ 1,250', '₹ 550', '₹ 75', '₹ 75', '₹ 3,750', 'Exempt'],
-      ['100192847293', 'EMP-003', 'Anil Patel', '₹ 55,000', '₹ 15,000', '₹ 1,800', '₹ 1,250', '₹ 550', '₹ 75', '₹ 75', '₹ 3,750', 'Exempt'],
-      ['100192847294', 'EMP-004', 'Anita Oliver', '₹ 45,000', '₹ 15,000', '₹ 1,800', '₹ 1,250', '₹ 550', '₹ 75', '₹ 75', '₹ 3,750', 'Exempt'],
-      ['100192847295', 'EMP-005', 'Audrey Peterson', '₹ 40,000', '₹ 15,000', '₹ 1,800', '₹ 1,250', '₹ 550', '₹ 75', '₹ 75', '₹ 3,750', 'Exempt'],
-      ['100192847296', 'EMP-006', 'Billy Kyle', '₹ 35,000', '₹ 15,000', '₹ 1,800', '₹ 1,250', '₹ 550', '₹ 75', '₹ 75', '₹ 3,750', '₹ 412.12'],
-      ['100192847297', 'EMP-007', 'Eli Lambert', '₹ 50,000', '₹ 15,000', '₹ 1,800', '₹ 1,250', '₹ 550', '₹ 75', '₹ 75', '₹ 3,750', 'Exempt'],
-      ['100192847298', 'EMP-008', 'Paul Williams', '₹ 48,000', '₹ 15,000', '₹ 1,800', '₹ 1,250', '₹ 550', '₹ 75', '₹ 75', '₹ 3,750', 'Exempt'],
+      ['100192847291', 'EMP-001', 'Aarav Mehta', 'Rs. 65,000', 'Rs. 15,000', 'Rs. 1,800', 'Rs. 1,250', 'Rs. 550', 'Rs. 75', 'Rs. 75', 'Rs. 3,750', 'Exempt'],
+      ['100192847292', 'EMP-002', 'Sara Khan', 'Rs. 55,000', 'Rs. 15,000', 'Rs. 1,800', 'Rs. 1,250', 'Rs. 550', 'Rs. 75', 'Rs. 75', 'Rs. 3,750', 'Exempt'],
+      ['100192847293', 'EMP-003', 'Anil Patel', 'Rs. 55,000', 'Rs. 15,000', 'Rs. 1,800', 'Rs. 1,250', 'Rs. 550', 'Rs. 75', 'Rs. 75', 'Rs. 3,750', 'Exempt'],
+      ['100192847294', 'EMP-004', 'Anita Oliver', 'Rs. 45,000', 'Rs. 15,000', 'Rs. 1,800', 'Rs. 1,250', 'Rs. 550', 'Rs. 75', 'Rs. 75', 'Rs. 3,750', 'Exempt'],
+      ['100192847295', 'EMP-005', 'Audrey Peterson', 'Rs. 40,000', 'Rs. 15,000', 'Rs. 1,800', 'Rs. 1,250', 'Rs. 550', 'Rs. 75', 'Rs. 75', 'Rs. 3,750', 'Exempt'],
+      ['100192847296', 'EMP-006', 'Billy Kyle', 'Rs. 35,000', 'Rs. 15,000', 'Rs. 1,800', 'Rs. 1,250', 'Rs. 550', 'Rs. 75', 'Rs. 75', 'Rs. 3,750', 'Rs. 412'],
+      ['100192847297', 'EMP-007', 'Eli Lambert', 'Rs. 50,000', 'Rs. 15,000', 'Rs. 1,800', 'Rs. 1,250', 'Rs. 550', 'Rs. 75', 'Rs. 75', 'Rs. 3,750', 'Exempt'],
+      ['100192847298', 'EMP-008', 'Paul Williams', 'Rs. 48,000', 'Rs. 15,000', 'Rs. 1,800', 'Rs. 1,250', 'Rs. 550', 'Rs. 75', 'Rs. 75', 'Rs. 3,750', 'Exempt'],
     ];
 
     autoTable(doc, {
-      startY: 36,
-      head: [['UAN Number', 'Code', 'Member Name', 'Gross Wages', 'EPF Wages', 'EE PF (12%)', 'EPS (8.33%)', 'ER EPF (3.67%)', 'EDLI (0.5%)', 'Admin (0.5%)', 'Total PF Remitted', 'ESI Remittance']],
+      startY: 34,
+      margin: { left: 14, right: 14 },
+      head: [['UAN Number', 'Code', 'Member Name', 'Gross Wages', 'EPF Wages', 'EE PF (12%)', 'EPS (8.33%)', 'ER EPF (3.67%)', 'EDLI (0.5%)', 'Admin (0.5%)', 'Total PF', 'ESI Remittance']],
       body: tableData,
       theme: 'grid',
       headStyles: {
@@ -298,22 +311,28 @@ export const pdfReports = {
         fontStyle: 'bold',
         fontSize: 7.5,
         halign: 'center',
+        cellPadding: 2,
       },
       bodyStyles: {
         fontSize: 7.5,
+        cellPadding: 2,
       },
       columnStyles: {
-        0: { halign: 'center' },
-        1: { halign: 'center' },
-        3: { halign: 'right' },
-        4: { halign: 'right' },
-        5: { halign: 'right' },
-        6: { halign: 'right' },
-        7: { halign: 'right' },
-        8: { halign: 'right' },
-        9: { halign: 'right' },
-        10: { halign: 'right', fontStyle: 'bold', textColor: ACCENT_GREEN },
-        11: { halign: 'center' },
+        0: { cellWidth: 26, halign: 'center' },
+        1: { cellWidth: 17, halign: 'center' },
+        2: { cellWidth: 28, halign: 'left', fontStyle: 'bold' },
+        3: { cellWidth: 23, halign: 'right' },
+        4: { cellWidth: 22, halign: 'right' },
+        5: { cellWidth: 22, halign: 'right' },
+        6: { cellWidth: 21, halign: 'right' },
+        7: { cellWidth: 22, halign: 'right' },
+        8: { cellWidth: 19, halign: 'right' },
+        9: { cellWidth: 19, halign: 'right' },
+        10: { cellWidth: 24, halign: 'right', fontStyle: 'bold', textColor: ACCENT_GREEN },
+        11: { cellWidth: 25, halign: 'center' },
+      },
+      alternateRowStyles: {
+        fillColor: [252, 250, 247],
       },
     });
 
@@ -325,38 +344,39 @@ export const pdfReports = {
     const doc = new jsPDF('landscape');
 
     doc.setFillColor(...BG_TINT);
-    doc.rect(0, 0, 297, 30, 'F');
+    doc.rect(0, 0, 297, 28, 'F');
     doc.setFillColor(...PRIMARY_COLOR);
-    doc.rect(0, 0, 297, 4, 'F');
+    doc.rect(0, 0, 297, 3.5, 'F');
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
+    doc.setFontSize(15);
     doc.setTextColor(...SECONDARY_COLOR);
-    doc.text('PeoplePay360 — TDS & Tax Withholding Statement', 14, 15);
+    doc.text('PeoplePay360 — TDS & Tax Withholding Statement', 14, 14);
 
-    doc.setFontSize(10);
+    doc.setFontSize(9.5);
     doc.setTextColor(...PRIMARY_COLOR);
-    doc.text('Form 24Q Quarterly Return Schedule (Financial Year 2026-27 | Quarter 2)', 14, 23);
+    doc.text('Form 24Q Quarterly Return Schedule (Financial Year 2026-27 | Quarter 2)', 14, 22);
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
+    doc.setFontSize(8.5);
     doc.setTextColor(100, 100, 100);
-    doc.text(`TAN: BLRP09281A | Tax Deductor: PeoplePay360 Technologies Pvt Ltd`, 170, 23);
+    doc.text('TAN: BLRP09281A | Tax Deductor: PeoplePay360 Technologies Pvt Ltd', 160, 22);
 
     const tableData = [
-      ['AABCM1928A', 'EMP-001', 'Aarav Mehta', '₹ 12,60,000', '₹ 1,50,000', '₹ 50,000', '₹ 10,60,000', '₹ 82,800', '₹ 6,900', 'BSR-0028192', '07-Oct-2026'],
-      ['BAPSK2819B', 'EMP-002', 'Sara Khan', '₹ 10,80,000', '₹ 1,50,000', '₹ 30,000', '₹ 9,00,000', '₹ 72,000', '₹ 6,000', 'BSR-0028192', '07-Oct-2026'],
-      ['CNMAP9281C', 'EMP-003', 'Anil Patel', '₹ 10,80,000', '₹ 1,50,000', '₹ 30,000', '₹ 9,00,000', '₹ 72,000', '₹ 6,000', 'BSR-0028192', '07-Oct-2026'],
-      ['DGAOT3829D', 'EMP-004', 'Anita Oliver', '₹ 9,00,000', '₹ 1,20,000', '₹ 25,000', '₹ 7,55,000', '₹ 54,000', '₹ 4,500', 'BSR-0028192', '07-Oct-2026'],
-      ['EPAPP4829E', 'EMP-005', 'Audrey Peterson', '₹ 8,16,000', '₹ 1,00,000', '₹ 20,000', '₹ 6,96,000', '₹ 46,800', '₹ 3,900', 'BSR-0028192', '07-Oct-2026'],
-      ['FBKPL5829F', 'EMP-006', 'Billy Kyle', '₹ 6,59,400', '₹ 80,000', '₹ 15,000', '₹ 5,64,400', '₹ 33,000', '₹ 2,750', 'BSR-0028192', '07-Oct-2026'],
-      ['GELKT6829G', 'EMP-007', 'Eli Lambert', '₹ 9,84,000', '₹ 1,40,000', '₹ 25,000', '₹ 8,19,000', '₹ 61,200', '₹ 5,100', 'BSR-0028192', '07-Oct-2026'],
-      ['HPWDT7829H', 'EMP-008', 'Paul Williams', '₹ 9,36,000', '₹ 1,30,000', '₹ 20,000', '₹ 7,86,000', '₹ 57,600', '₹ 4,800', 'BSR-0028192', '07-Oct-2026'],
+      ['AABCM1928A', 'EMP-001', 'Aarav Mehta', 'Rs. 12,60,000', 'Rs. 1,50,000', 'Rs. 50,000', 'Rs. 10,60,000', 'Rs. 82,800', 'Rs. 6,900', 'BSR-0028192', '07-Oct-2026'],
+      ['BAPSK2819B', 'EMP-002', 'Sara Khan', 'Rs. 10,80,000', 'Rs. 1,50,000', 'Rs. 30,000', 'Rs. 9,00,000', 'Rs. 72,000', 'Rs. 6,000', 'BSR-0028192', '07-Oct-2026'],
+      ['CNMAP9281C', 'EMP-003', 'Anil Patel', 'Rs. 10,80,000', 'Rs. 1,50,000', 'Rs. 30,000', 'Rs. 9,00,000', 'Rs. 72,000', 'Rs. 6,000', 'BSR-0028192', '07-Oct-2026'],
+      ['DGAOT3829D', 'EMP-004', 'Anita Oliver', 'Rs. 9,00,000', 'Rs. 1,20,000', 'Rs. 25,000', 'Rs. 7,55,000', 'Rs. 54,000', 'Rs. 4,500', 'BSR-0028192', '07-Oct-2026'],
+      ['EPAPP4829E', 'EMP-005', 'Audrey Peterson', 'Rs. 8,16,000', 'Rs. 1,00,000', 'Rs. 20,000', 'Rs. 6,96,000', 'Rs. 46,800', 'Rs. 3,900', 'BSR-0028192', '07-Oct-2026'],
+      ['FBKPL5829F', 'EMP-006', 'Billy Kyle', 'Rs. 6,59,400', 'Rs. 80,000', 'Rs. 15,000', 'Rs. 5,64,400', 'Rs. 33,000', 'Rs. 2,750', 'BSR-0028192', '07-Oct-2026'],
+      ['GELKT6829G', 'EMP-007', 'Eli Lambert', 'Rs. 9,84,000', 'Rs. 1,40,000', 'Rs. 25,000', 'Rs. 8,19,000', 'Rs. 61,200', 'Rs. 5,100', 'BSR-0028192', '07-Oct-2026'],
+      ['HPWDT7829H', 'EMP-008', 'Paul Williams', 'Rs. 9,36,000', 'Rs. 1,30,000', 'Rs. 20,000', 'Rs. 7,86,000', 'Rs. 57,600', 'Rs. 4,800', 'BSR-0028192', '07-Oct-2026'],
     ];
 
     autoTable(doc, {
-      startY: 36,
-      head: [['PAN of Deductee', 'Code', 'Employee Name', 'Annual CTC', '80C Exemption', 'Standard Ded.', 'Taxable Income', 'Annual Tax', 'Monthly TDS', 'Challan BSR', 'Deposit Date']],
+      startY: 34,
+      margin: { left: 14, right: 14 },
+      head: [['PAN', 'Code', 'Employee Name', 'Annual CTC', '80C Exemption', 'Std Ded.', 'Taxable Income', 'Annual Tax', 'Monthly TDS', 'Challan BSR', 'Deposit Date']],
       body: tableData,
       theme: 'grid',
       headStyles: {
@@ -365,21 +385,27 @@ export const pdfReports = {
         fontStyle: 'bold',
         fontSize: 7.5,
         halign: 'center',
+        cellPadding: 2,
       },
       bodyStyles: {
         fontSize: 7.5,
+        cellPadding: 2,
       },
       columnStyles: {
-        0: { halign: 'center' },
-        1: { halign: 'center' },
-        3: { halign: 'right' },
-        4: { halign: 'right' },
-        5: { halign: 'right' },
-        6: { halign: 'right', fontStyle: 'bold' },
-        7: { halign: 'right' },
-        8: { halign: 'right', fontStyle: 'bold', textColor: ACCENT_RED },
-        9: { halign: 'center' },
-        10: { halign: 'center' },
+        0: { cellWidth: 24, halign: 'center' },
+        1: { cellWidth: 17, halign: 'center' },
+        2: { cellWidth: 28, halign: 'left', fontStyle: 'bold' },
+        3: { cellWidth: 24, halign: 'right' },
+        4: { cellWidth: 24, halign: 'right' },
+        5: { cellWidth: 20, halign: 'right' },
+        6: { cellWidth: 26, halign: 'right', fontStyle: 'bold' },
+        7: { cellWidth: 22, halign: 'right' },
+        8: { cellWidth: 23, halign: 'right', fontStyle: 'bold', textColor: ACCENT_RED },
+        9: { cellWidth: 25, halign: 'center' },
+        10: { cellWidth: 24, halign: 'center' },
+      },
+      alternateRowStyles: {
+        fillColor: [252, 250, 247],
       },
     });
 
@@ -407,34 +433,35 @@ export const pdfReports = {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.5);
     doc.setTextColor(100, 100, 100);
-    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 155, 24);
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 150, 24);
 
     doc.setFillColor(255, 255, 255);
     doc.setDrawColor(220, 210, 200);
     doc.roundedRect(14, 38, 182, 22, 2, 2, 'FD');
 
-    doc.setFontSize(8.5);
+    doc.setFontSize(8);
     doc.setTextColor(120, 120, 120);
     doc.text('TOTAL ACTIVE HEADCOUNT', 20, 46);
     doc.text('MONTHLY COMPENSATION EXPENSE', 85, 46);
     doc.text('AVERAGE CTC PER HEAD', 150, 46);
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13);
+    doc.setFontSize(12);
     doc.setTextColor(...SECONDARY_COLOR);
     doc.text('48 Staff', 20, 54);
-    doc.text('₹ 4,82,950', 85, 54);
-    doc.text('₹ 1,00,614', 150, 54);
+    doc.text('Rs. 4,82,950', 85, 54);
+    doc.text('Rs. 1,00,614', 150, 54);
 
     const tableData = [
-      ['Engineering & Product', '22 Staff', '₹ 2,40,000', '₹ 2,04,000', '49.7%', '₹ 1,09,090', 'Active'],
-      ['Finance & Accounting', '8 Staff', '₹ 92,000', '₹ 78,200', '19.0%', '₹ 1,15,000', 'Active'],
-      ['HR & People Operations', '6 Staff', '₹ 64,000', '₹ 54,400', '13.3%', '₹ 1,06,666', 'Active'],
-      ['Sales & Growth Marketing', '12 Staff', '₹ 86,950', '₹ 77,940', '18.0%', '₹ 72,458', 'Active'],
+      ['Engineering & Product', '22 Staff', 'Rs. 2,40,000', 'Rs. 2,04,000', '49.7%', 'Rs. 1,09,090', 'Active'],
+      ['Finance & Accounting', '8 Staff', 'Rs. 92,000', 'Rs. 78,200', '19.0%', 'Rs. 1,15,000', 'Active'],
+      ['HR & People Operations', '6 Staff', 'Rs. 64,000', 'Rs. 54,400', '13.3%', 'Rs. 1,06,666', 'Active'],
+      ['Sales & Growth Marketing', '12 Staff', 'Rs. 86,950', 'Rs. 77,940', '18.0%', 'Rs. 72,458', 'Active'],
     ];
 
     autoTable(doc, {
       startY: 68,
+      margin: { left: 14, right: 14 },
       head: [['Department', 'Headcount', 'Monthly Gross', 'Monthly Net', '% of Budget', 'Avg Monthly CTC', 'Status']],
       body: tableData,
       theme: 'grid',
@@ -442,20 +469,22 @@ export const pdfReports = {
         fillColor: PRIMARY_COLOR,
         textColor: [255, 255, 255],
         fontStyle: 'bold',
-        fontSize: 9,
+        fontSize: 8.5,
         halign: 'center',
+        cellPadding: 2.5,
       },
       bodyStyles: {
-        fontSize: 8.5,
+        fontSize: 8,
+        cellPadding: 2.5,
       },
       columnStyles: {
-        0: { fontStyle: 'bold' },
-        1: { halign: 'center' },
-        2: { halign: 'right' },
-        3: { halign: 'right' },
-        4: { halign: 'center', fontStyle: 'bold', textColor: PRIMARY_COLOR },
-        5: { halign: 'right' },
-        6: { halign: 'center', textColor: ACCENT_GREEN },
+        0: { cellWidth: 46, fontStyle: 'bold' },
+        1: { cellWidth: 22, halign: 'center' },
+        2: { cellWidth: 26, halign: 'right' },
+        3: { cellWidth: 26, halign: 'right' },
+        4: { cellWidth: 22, halign: 'center', fontStyle: 'bold', textColor: PRIMARY_COLOR },
+        5: { cellWidth: 26, halign: 'right' },
+        6: { cellWidth: 20, halign: 'center', textColor: ACCENT_GREEN },
       },
     });
 
