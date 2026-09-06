@@ -152,7 +152,7 @@ export const Dashboard: React.FC = () => {
   // Dynamic calculations based on filters & actual data
   const filteredEmployees = useMemo(() => {
     return employees.filter((emp: any) => {
-      const matchDept = selectedDept === 'ALL' || emp.department === selectedDept;
+      const matchDept = selectedDept === 'ALL' || (emp.department || '').toLowerCase() === selectedDept.toLowerCase();
       const matchType = selectedEmpType === 'ALL' || (emp.employment_type || 'Full-Time') === selectedEmpType;
       const matchCompany = selectedCompany === 'ALL' || (emp.company || 'PeoplePay360 Global') === selectedCompany;
       return matchDept && matchType && matchCompany;
@@ -161,7 +161,9 @@ export const Dashboard: React.FC = () => {
 
   const filteredMetrics = useMemo(() => {
     const kpis = metrics?.kpis;
-    const activeCount = employees.length > 0 ? filteredEmployees.length || employees.length : (kpis?.active_employees ?? 10);
+    const activeCount = employees.length > 0 
+      ? (selectedDept === 'ALL' && selectedEmpType === 'ALL' && selectedCompany === 'ALL' ? employees.length : filteredEmployees.length)
+      : (kpis?.active_employees ?? 10);
 
     // Dynamic payslip status counting from real payruns / payslips
     let draftCount = 0;
@@ -182,10 +184,13 @@ export const Dashboard: React.FC = () => {
     }
 
     // Salary Totals computed from real Supabase DB metrics
-    const multiplier = selectedPeriod === 'LAST_MONTH' ? 0.95 : selectedPeriod === 'Q1_2026' ? 2.9 : selectedPeriod === 'ANNUAL' ? 11.8 : 1.0;
+    const multiplier = selectedPeriod === 'LAST_MONTH' ? 0.95 : selectedPeriod === 'Q3_2026' ? 2.9 : selectedPeriod === 'ANNUAL' ? 11.8 : 1.0;
     const basePayroll = kpis?.total_payroll_last_month || 1163000;
     const totalGross = Math.round(basePayroll * multiplier);
     const totalNet = Math.round(totalGross * 0.86);
+
+    const presentToday = kpis?.today_present ?? activeCount;
+    const dutyPercent = activeCount > 0 ? Math.min(100, Math.round((presentToday / activeCount) * 100)) : 100;
 
     return {
       activeEmployees: activeCount,
@@ -195,28 +200,30 @@ export const Dashboard: React.FC = () => {
       computedPayslips: computedCount,
       validatedPayslips: validatedCount,
       paidPayslips: paidCount,
-      presentToday: kpis?.today_present ?? activeCount,
+      presentToday,
       onLeaveToday: kpis?.today_on_leave ?? 0,
       lateToday: kpis?.today_late ?? 0,
+      attendanceDutyPercent: dutyPercent,
       pendingLeaves: kpis?.pending_leave_requests ?? 0,
       pendingPayruns: kpis?.pending_payruns ?? (payruns.length > 0 ? payruns.filter(p => (p.status || '').toLowerCase() !== 'paid').length : 1),
     };
-  }, [metrics, filteredEmployees, employees, payslips, payruns, selectedPeriod]);
+  }, [metrics, filteredEmployees, employees, payslips, payruns, selectedPeriod, selectedDept, selectedEmpType, selectedCompany]);
 
   // Department salary distribution filtered
   const departmentData = useMemo(() => {
     if (selectedDept !== 'ALL') {
-      return [{ department: selectedDept, count: filteredEmployees.length || 12, salary: Math.round(filteredMetrics.totalGross * 0.35) }];
+      return [{ department: selectedDept, count: filteredEmployees.length || 1, salary: Math.round(filteredMetrics.totalGross * 0.35) }];
     }
     if (metrics?.department_distribution && metrics.department_distribution.length > 0) {
       return metrics.department_distribution;
     }
     return [
-      { department: 'Engineering', count: 18, salary: 1120000 },
-      { department: 'Finance', count: 8, salary: 540000 },
-      { department: 'HR & Ops', count: 6, salary: 380000 },
-      { department: 'Design', count: 7, salary: 410000 },
-      { department: 'Sales', count: 9, salary: 490000 },
+      { department: 'Engineering', count: 3, total_wage: 425000 },
+      { department: 'Human Resources', count: 2, total_wage: 210000 },
+      { department: 'Finance & Payroll', count: 2, total_wage: 207000 },
+      { department: 'Product Design', count: 1, total_wage: 98000 },
+      { department: 'Sales & Marketing', count: 1, total_wage: 135000 },
+      { department: 'Operations', count: 1, total_wage: 88000 },
     ];
   }, [metrics, selectedDept, filteredEmployees, filteredMetrics]);
 
@@ -243,7 +250,7 @@ export const Dashboard: React.FC = () => {
       value: `₹${(filteredMetrics.totalGross / 100000).toFixed(2)}L`,
       total: `Net: ₹${(filteredMetrics.totalNet / 100000).toFixed(2)}L disbursed`,
       icon: DollarSign,
-      badge: selectedPeriod.replace('_', ' '),
+      badge: selectedPeriod === 'CURRENT_MONTH' ? 'Current Month' : selectedPeriod.replace(/_/g, ' '),
       color: 'bg-[#F0FDF4] text-[#15803D] border-[#BBF7D0]',
       link: '/payroll',
     },
@@ -252,7 +259,7 @@ export const Dashboard: React.FC = () => {
       value: `${filteredMetrics.presentToday} / ${filteredMetrics.activeEmployees}`,
       total: `${filteredMetrics.lateToday} late • ${filteredMetrics.onLeaveToday} on leave`,
       icon: UserCheck,
-      badge: '92% On Duty',
+      badge: `${filteredMetrics.attendanceDutyPercent}% On Duty`,
       color: 'bg-[#F7EFE4] text-[#8C532B] border-[#E2CEB9]',
       link: '/attendance',
     },
@@ -261,7 +268,7 @@ export const Dashboard: React.FC = () => {
       value: filteredMetrics.pendingLeaves,
       total: `${filteredMetrics.pendingPayruns} payrun cycle in progress`,
       icon: CalendarOff,
-      badge: 'Requires Sign-off',
+      badge: filteredMetrics.pendingPayruns > 0 ? 'Requires Sign-off' : 'All Clear',
       color: 'bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]',
       link: '/time-off',
     },
@@ -395,10 +402,10 @@ export const Dashboard: React.FC = () => {
             onChange={(e) => setSelectedPeriod(e.target.value)}
             className="py-1.5 px-3 text-xs rounded-xl border border-[#EADBCE] bg-[#FAF7F2]/80 text-[#381E0D] font-medium focus:border-[#8C532B] focus:bg-white focus:outline-none cursor-pointer"
           >
-            <option value="CURRENT_MONTH">Current Month (Feb 2026)</option>
-            <option value="LAST_MONTH">Previous Month (Jan 2026)</option>
-            <option value="Q1_2026">Q1 2026 Cumulative</option>
-            <option value="ANNUAL">FY 2025-26 (Annual)</option>
+            <option value="CURRENT_MONTH">Current Month (Sep 2026)</option>
+            <option value="LAST_MONTH">Previous Month (Aug 2026)</option>
+            <option value="Q3_2026">Q3 2026 Cumulative</option>
+            <option value="ANNUAL">FY 2026-27 (Annual)</option>
           </select>
 
           {/* Department Filter */}
@@ -407,12 +414,13 @@ export const Dashboard: React.FC = () => {
             onChange={(e) => setSelectedDept(e.target.value)}
             className="py-1.5 px-3 text-xs rounded-xl border border-[#EADBCE] bg-[#FAF7F2]/80 text-[#381E0D] font-medium focus:border-[#8C532B] focus:bg-white focus:outline-none cursor-pointer"
           >
-            <option value="ALL">All Departments</option>
-            <option value="Engineering">Engineering</option>
-            <option value="Finance">Finance</option>
-            <option value="HR">Human Resources</option>
-            <option value="Design">Product Design</option>
-            <option value="Sales">Sales &amp; Growth</option>
+            <option value="ALL">All Departments (10)</option>
+            <option value="Engineering">Engineering (3)</option>
+            <option value="Human Resources">Human Resources (2)</option>
+            <option value="Finance & Payroll">Finance &amp; Payroll (2)</option>
+            <option value="Product Design">Product Design (1)</option>
+            <option value="Sales & Marketing">Sales &amp; Marketing (1)</option>
+            <option value="Operations">Operations (1)</option>
           </select>
 
           {/* Employee Type Filter */}
@@ -434,8 +442,7 @@ export const Dashboard: React.FC = () => {
             className="py-1.5 px-3 text-xs rounded-xl border border-[#EADBCE] bg-[#FAF7F2]/80 text-[#381E0D] font-medium focus:border-[#8C532B] focus:bg-white focus:outline-none cursor-pointer"
           >
             <option value="ALL">All Companies</option>
-            <option value="PeoplePay360 Global">PeoplePay360 Global Inc.</option>
-            <option value="Acme Enterprise">Acme Technologies</option>
+            <option value="PeoplePay360 Global">PeoplePay360 Global</option>
           </select>
         </div>
       </div>

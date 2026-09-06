@@ -83,27 +83,76 @@ EMPLOYEES = [
     },
 ]
 
+def _serialize_db_employee(emp, idx):
+    dept_name = emp.department.name if emp.department else "Engineering"
+    return {
+        "id": idx,
+        "uuid": str(emp.id),
+        "emp_code": emp.employee_code or f"EMP-{idx:03d}",
+        "first_name": emp.first_name,
+        "last_name": emp.last_name,
+        "email": emp.email,
+        "phone": emp.phone or "+91 98765 43210",
+        "department": dept_name,
+        "position": emp.job_title or "Specialist",
+        "joining_date": emp.joining_date.isoformat() if emp.joining_date else "2024-01-15",
+        "status": emp.employment_status.upper() if emp.employment_status else "ACTIVE",
+        "manager": "Sara Khan",
+        "work_location": "Bangalore HQ",
+        "company": "PeoplePay360 Global",
+        "working_hours": "Standard 40h / week",
+        "bank_account_number": emp.bank_account_number or f"XXXX-XXXX-{1000 + idx}",
+        "bank_name": emp.bank_name or "HDFC Bank",
+        "bank_ifsc": emp.bank_ifsc_code or "HDFC0001234",
+        "pan_number": "ABCDE1234F",
+        "pf_number": f"PF/BLR/00912/{idx:03d}",
+        "uan_number": f"1009823481{idx:02d}",
+        "address": f"{emp.city or 'Bangalore'}, {emp.state or 'Karnataka'}",
+        "emergency_contact": "+91 98765 00000",
+    }
+
+
 @employees_bp.get("/employees")
 def list_employees():
     dept = request.args.get("department")
     status = request.args.get("status")
     search = request.args.get("search")
-    res = EMPLOYEES
-    if dept:
+
+    try:
+        from app.models.employee import Employee
+        db_emps = Employee.query.order_by(Employee.employee_code.asc()).all()
+        if db_emps:
+            res = [_serialize_db_employee(e, i) for i, e in enumerate(db_emps, start=1)]
+        else:
+            res = EMPLOYEES
+    except Exception:
+        res = EMPLOYEES
+
+    if dept and dept.upper() != "ALL":
         res = [e for e in res if e["department"].lower() == dept.lower()]
-    if status:
+    if status and status.upper() != "ALL":
         res = [e for e in res if e["status"].lower() == status.lower()]
     if search:
         s = search.lower()
         res = [e for e in res if s in e["first_name"].lower() or s in e["last_name"].lower() or s in e["emp_code"].lower()]
     return jsonify(res), 200
 
+
 @employees_bp.get("/employees/<int:emp_id>")
 def get_employee(emp_id):
+    try:
+        from app.models.employee import Employee
+        db_emps = Employee.query.order_by(Employee.employee_code.asc()).all()
+        if 1 <= emp_id <= len(db_emps):
+            return jsonify(_serialize_db_employee(db_emps[emp_id - 1], emp_id)), 200
+    except Exception:
+        pass
+
     for e in EMPLOYEES:
         if e["id"] == emp_id:
             return jsonify(e), 200
     return jsonify({"detail": "Employee not found"}), 404
+
 
 @employees_bp.post("/employees")
 def create_employee():
@@ -127,6 +176,7 @@ def create_employee():
     }
     EMPLOYEES.append(new_emp)
     return jsonify(new_emp), 201
+
 
 @employees_bp.put("/employees/<int:emp_id>")
 def update_employee(emp_id):
