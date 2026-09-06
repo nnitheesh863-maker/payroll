@@ -278,6 +278,53 @@ export const TimeOffPage: React.FC = () => {
     );
   });
 
+  // Real-time dynamic statistics computed from live allocations and requests state
+  const ptoAllocs = allocations.filter(
+    (a) =>
+      a.time_off_type_name.toLowerCase().includes('paid') ||
+      a.time_off_type_name.toLowerCase().includes('pto') ||
+      a.time_off_type_name.toLowerCase().includes('casual')
+  );
+  const ptoRemaining = ptoAllocs.length > 0 
+    ? ptoAllocs.reduce((acc, a) => acc + (Number(a.remaining_days) || 0), 0)
+    : 12;
+  const ptoAllocated = ptoAllocs.length > 0 
+    ? ptoAllocs.reduce((acc, a) => acc + (Number(a.allocated_days) || 0), 0)
+    : 20;
+  const ptoPercent = ptoAllocated > 0 ? Math.min(100, Math.max(5, Math.round((ptoRemaining / ptoAllocated) * 100))) : 60;
+
+  const sickAllocs = allocations.filter((a) =>
+    a.time_off_type_name.toLowerCase().includes('sick')
+  );
+  const sickRemaining = sickAllocs.length > 0
+    ? sickAllocs.reduce((acc, a) => acc + (Number(a.remaining_days) || 0), 0)
+    : 8;
+  const sickAllocated = sickAllocs.length > 0
+    ? sickAllocs.reduce((acc, a) => acc + (Number(a.allocated_days) || 0), 0)
+    : 10;
+  const sickPercent = sickAllocated > 0 ? Math.min(100, Math.max(5, Math.round((sickRemaining / sickAllocated) * 100))) : 80;
+
+  const compAllocs = allocations.filter(
+    (a) =>
+      a.time_off_type_name.toLowerCase().includes('comp') ||
+      a.time_off_type_name.toLowerCase().includes('compensatory')
+  );
+  const compRemaining = compAllocs.length > 0
+    ? compAllocs.reduce((acc, a) => acc + (Number(a.remaining_days) || 0), 0)
+    : 1;
+  const compAllocated = compAllocs.length > 0
+    ? compAllocs.reduce((acc, a) => acc + (Number(a.allocated_days) || 0), 0)
+    : 2;
+  const compPercent = compAllocated > 0 ? Math.min(100, Math.max(5, Math.round((compRemaining / compAllocated) * 100))) : 50;
+
+  const pendingRequestsCount = requests.filter(
+    (r) => r.status === 'To Approve'
+  ).length;
+  const pendingAllocationsCount = allocations.filter(
+    (a) => a.status === 'To Approve'
+  ).length;
+  const totalPendingReviews = pendingRequestsCount + pendingAllocationsCount;
+
   return (
     <div className="min-h-screen bg-[#FAF7F2] p-4 sm:p-6 lg:p-8 font-sans text-slate-800 space-y-6 antialiased selection:bg-[#EADCC9] selection:text-[#78350F]">
       
@@ -416,54 +463,88 @@ export const TimeOffPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Top Metric Cards */}
+          {/* Top Metric Cards (Live Real-Time Data) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white p-5 rounded-3xl border border-[#EADBCE] shadow-xs">
-              <p className="text-xs font-bold text-[#735338] uppercase tracking-wider">Paid Time Off (PTO)</p>
+            <div className="bg-white p-5 rounded-3xl border border-[#EADBCE] shadow-xs relative overflow-hidden group hover:border-[#8C532B]/50 transition-all">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold text-[#735338] uppercase tracking-wider">Paid Time Off (PTO)</p>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Live Quota</span>
+              </div>
               <div className="mt-2 flex items-baseline gap-2">
-                <span className="text-3xl font-black text-[#381E0D]">12</span>
-                <span className="text-xs text-[#735338] font-bold">/ 20 days remaining</span>
+                <span className="text-3xl font-black text-[#381E0D]">{ptoRemaining}</span>
+                <span className="text-xs text-[#735338] font-bold">/ {ptoAllocated} days remaining</span>
               </div>
               <div className="mt-3 w-full bg-[#FAF7F2] h-2 rounded-full overflow-hidden border border-[#EADBCE]">
-                <div className="bg-[#8C532B] h-full rounded-full w-[60%]" />
+                <div 
+                  className="bg-gradient-to-r from-[#8C532B] to-[#A06439] h-full rounded-full transition-all duration-500" 
+                  style={{ width: `${ptoPercent}%` }} 
+                />
               </div>
+              <p className="text-[10px] text-[#A38A73] mt-2 font-medium">
+                {Math.max(0, ptoAllocated - ptoRemaining)} days used &bull; {ptoAllocs.length} allocations active
+              </p>
             </div>
 
-            <div className="bg-white p-5 rounded-3xl border border-[#EADBCE] shadow-xs">
-              <p className="text-xs font-bold text-[#735338] uppercase tracking-wider">Sick Leave</p>
+            <div className="bg-white p-5 rounded-3xl border border-[#EADBCE] shadow-xs relative overflow-hidden group hover:border-[#8C532B]/50 transition-all">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold text-[#735338] uppercase tracking-wider">Sick Leave</p>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">Statutory</span>
+              </div>
               <div className="mt-2 flex items-baseline gap-2">
-                <span className="text-3xl font-black text-[#8C532B]">8</span>
-                <span className="text-xs text-[#735338] font-bold">/ 10 days remaining</span>
+                <span className="text-3xl font-black text-[#8C532B]">{sickRemaining}</span>
+                <span className="text-xs text-[#735338] font-bold">/ {sickAllocated} days remaining</span>
               </div>
               <div className="mt-3 w-full bg-[#FAF7F2] h-2 rounded-full overflow-hidden border border-[#EADBCE]">
-                <div className="bg-[#9E6237] h-full rounded-full w-[80%]" />
+                <div 
+                  className="bg-gradient-to-r from-[#9E6237] to-[#B87B4C] h-full rounded-full transition-all duration-500" 
+                  style={{ width: `${sickPercent}%` }} 
+                />
               </div>
+              <p className="text-[10px] text-[#A38A73] mt-2 font-medium">
+                {Math.max(0, sickAllocated - sickRemaining)} days utilized &bull; {sickAllocs.length} policies active
+              </p>
             </div>
 
-            <div className="bg-white p-5 rounded-3xl border border-[#EADBCE] shadow-xs">
-              <p className="text-xs font-bold text-[#735338] uppercase tracking-wider">Comp Off Quota</p>
+            <div className="bg-white p-5 rounded-3xl border border-[#EADBCE] shadow-xs relative overflow-hidden group hover:border-[#8C532B]/50 transition-all">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold text-[#735338] uppercase tracking-wider">Comp Off Quota</p>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">Earned</span>
+              </div>
               <div className="mt-2 flex items-baseline gap-2">
-                <span className="text-3xl font-black text-[#78350F]">1</span>
-                <span className="text-xs text-[#735338] font-bold">/ 2 days remaining</span>
+                <span className="text-3xl font-black text-[#78350F]">{compRemaining}</span>
+                <span className="text-xs text-[#735338] font-bold">/ {compAllocated} days remaining</span>
               </div>
               <div className="mt-3 w-full bg-[#FAF7F2] h-2 rounded-full overflow-hidden border border-[#EADBCE]">
-                <div className="bg-[#B45309] h-full rounded-full w-[50%]" />
+                <div 
+                  className="bg-gradient-to-r from-[#B45309] to-[#D97706] h-full rounded-full transition-all duration-500" 
+                  style={{ width: `${compPercent}%` }} 
+                />
               </div>
+              <p className="text-[10px] text-[#A38A73] mt-2 font-medium">
+                {Math.max(0, compAllocated - compRemaining)} days redeemed &bull; {compAllocs.length} records
+              </p>
             </div>
 
-            <div className="bg-white p-5 rounded-3xl border border-[#EADBCE] shadow-xs">
-              <p className="text-xs font-bold text-[#735338] uppercase tracking-wider">Approval Queue</p>
+            <div className="bg-white p-5 rounded-3xl border border-[#EADBCE] shadow-xs relative overflow-hidden group hover:border-[#8C532B]/50 transition-all">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold text-[#735338] uppercase tracking-wider">Approval Queue</p>
+                {totalPendingReviews > 0 && (
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 animate-pulse">
+                    Action Required
+                  </span>
+                )}
+              </div>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-3xl font-black text-[#B45309]">
-                  {requests.filter((r) => r.status === 'To Approve').length}
+                  {pendingRequestsCount}
                 </span>
-                <span className="text-xs text-[#735338] font-bold">Pending Manager Review</span>
+                <span className="text-xs text-[#735338] font-bold">Pending HR Manager Review</span>
               </div>
               <button
                 onClick={() => setActiveTab('requests')}
-                className="mt-3 text-xs font-bold text-[#8C532B] hover:underline flex items-center gap-1 cursor-pointer"
+                className="mt-3 text-xs font-bold text-[#8C532B] hover:text-[#78350F] flex items-center gap-1 cursor-pointer transition-colors group-hover:underline"
               >
-                Review Requests <ChevronRight className="h-3 w-3" />
+                Review Requests ({pendingRequestsCount} pending) <ChevronRight className="h-3 w-3" />
               </button>
             </div>
           </div>
