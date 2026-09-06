@@ -11,10 +11,15 @@ import {
   Save,
   CheckCircle2,
   Globe,
+  Menu,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  onOpenMobileMenu?: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({ onOpenMobileMenu }) => {
   const { user } = useAuth();
   const [isCheckedIn, setIsCheckedIn] = useState<boolean>(true);
   const [showWidgetModal, setShowWidgetModal] = useState(false);
@@ -116,47 +121,58 @@ export const Header: React.FC = () => {
   }, [showWidgetModal]);
 
   return (
-    <header className="h-16 bg-white/95 backdrop-blur-md border-b border-[#EADBCE]/90 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-[0_2px_10px_rgba(120,53,15,0.02)]">
+    <header className="h-16 bg-white/95 backdrop-blur-md border-b border-[#EADBCE]/90 px-3 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-[0_2px_10px_rgba(120,53,15,0.02)]">
       
-      {/* Search Bar */}
-      <div className="flex items-center gap-3 flex-1 max-w-md">
-        <div className="relative w-full">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8C532B]/60" />
+      {/* Left: Mobile Hamburger & Search Bar */}
+      <div className="flex items-center gap-2 sm:gap-3 flex-1 max-w-md min-w-0">
+        {onOpenMobileMenu && (
+          <button
+            onClick={onOpenMobileMenu}
+            className="lg:hidden p-2 -ml-1 text-[#735338] hover:text-[#381E0D] hover:bg-[#FAF7F2] rounded-xl transition-colors cursor-pointer border border-[#EADBCE]/60"
+            aria-label="Open mobile navigation menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        )}
+
+        <div className="relative w-full min-w-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8C532B]/60" />
           <input
             type="text"
-            placeholder="Search employees, contracts, payruns..."
-            className="w-full pl-10 pr-4 py-2 text-xs bg-[#FAF7F2] border border-[#EADBCE] rounded-xl text-[#381E0D] placeholder-[#A38A73] focus:outline-none focus:bg-white focus:border-[#8C532B] focus:ring-4 focus:ring-[#8C532B]/10 transition-all font-medium shadow-xs"
+            placeholder="Search employees, payroll..."
+            className="w-full pl-9 pr-3 py-1.5 sm:py-2 text-xs bg-[#FAF7F2] border border-[#EADBCE] rounded-xl text-[#381E0D] placeholder-[#A38A73] focus:outline-none focus:bg-white focus:border-[#8C532B] focus:ring-4 focus:ring-[#8C532B]/10 transition-all font-medium shadow-xs truncate"
           />
         </div>
       </div>
 
       {/* Right Controls */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 ml-2">
         
         {/* Attendance Quick Action Widget Trigger Button with Live India Time */}
         <button
           onClick={() => setShowWidgetModal((prev) => !prev)}
-          className="flex items-center gap-2.5 bg-[#FAF7F2] hover:bg-[#F5ECE0] px-3.5 py-1.5 rounded-xl border border-[#EADBCE] transition-all cursor-pointer shadow-xs group"
+          className="flex items-center gap-1.5 sm:gap-2.5 bg-[#FAF7F2] hover:bg-[#F5ECE0] px-2.5 sm:px-3.5 py-1.5 rounded-xl border border-[#EADBCE] transition-all cursor-pointer shadow-xs group"
           title="Click to open India IST attendance punch-in modal"
         >
           <span
-            className={`h-2.5 w-2.5 rounded-full ${
-              isCheckedIn ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.9)] animate-pulse' : 'bg-rose-500'
+            className={`h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full shrink-0 ${
+              isCheckedIn ? 'bg-emerald-500 shadow-[0_0_8px_rgba(160,185,129,0.9)] animate-pulse' : 'bg-rose-500'
             }`}
           />
 
-          <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-[#381E0D]">
-            <Clock className="h-3.5 w-3.5 text-[#8C532B]" />
-            <span>{getISTTimeString(currentTime)}</span>
+          <div className="flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-xs font-mono font-bold text-[#381E0D]">
+            <Clock className="h-3.5 w-3.5 text-[#8C532B] shrink-0" />
+            <span className="hidden xs:inline sm:inline">{getISTTimeString(currentTime)}</span>
+            <span className="xs:hidden sm:hidden">{currentTime.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })}</span>
           </div>
 
-          <span className="text-[10px] font-extrabold text-[#8C532B] bg-[#EADBCE]/50 px-1.5 py-0.5 rounded group-hover:bg-[#8C532B] group-hover:text-white transition-colors">
+          <span className="hidden sm:inline text-[10px] font-extrabold text-[#8C532B] bg-[#EADBCE]/50 px-1.5 py-0.5 rounded group-hover:bg-[#8C532B] group-hover:text-white transition-colors">
             IST
           </span>
         </button>
 
         {/* User Role Badge */}
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#FAF7F2] border border-[#EADBCE] text-xs shadow-xs">
+        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#FAF7F2] border border-[#EADBCE] text-xs shadow-xs">
           <div className="h-6 w-6 rounded-lg bg-gradient-to-tr from-[#8C532B] to-[#B87B4C] text-white flex items-center justify-center font-black text-[11px] shadow-sm shadow-[#8C532B]/30 drop-shadow-[0_0_6px_rgba(140,83,43,0.5)]">
             {user?.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
           </div>
@@ -180,11 +196,11 @@ export const Header: React.FC = () => {
       {/* Attendance Modal with Backdrop Click-to-Close */}
       {showWidgetModal && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-150"
           onClick={() => setShowWidgetModal(false)}
         >
           <div 
-            className="bg-[#121520] text-white rounded-3xl border border-slate-700 max-w-sm w-full p-6 shadow-2xl relative animate-in zoom-in-95 duration-150"
+            className="bg-[#121520] text-white rounded-3xl border border-slate-700 max-w-sm w-full p-4 sm:p-6 shadow-2xl relative max-h-[92vh] overflow-y-auto animate-in zoom-in-95 duration-150"
             onClick={(e) => e.stopPropagation()}
           >
             
